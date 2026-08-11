@@ -2,10 +2,14 @@
   "name": "findmycar-search-api",
   "version": "1.0.0",
   "private": true,
-  "description": "Search backend for Find My Car: fetches Autovit.ro / AutoScout24.ro / AutoScout24.de / publi24.ro / OLX.ro (mobile.de best-effort) and normalises listings.",
+  "description": "Search backend for Find My Car: fetches Autovit.ro / AutoScout24.ro / AutoScout24.de / publi24.ro (mobile.de best-effort, OLX.ro via headless browser) and normalises listings.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "npx playwright install chromium chromium-headless-shell"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
   },
   "engines": {
     "node": ">=18"

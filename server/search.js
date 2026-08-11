@@ -12,9 +12,14 @@ var util = require('./adapters/util');
 // deploy/runtime issues (root-only apt install, missing headless-shell
 // binary, browsers cache not surviving build→runtime) it launched
 // successfully but returned 0 results, likely a cookie-consent modal
-// blocking the real request in headless mode. Not worth a fourth round of
-// blind fixes for one of seven sources — it's deep-link-only now, same as
-// mobile.de.
+// blocking the real request in headless mode. It's deep-link-only now,
+// same as mobile.de.
+//
+// OLX.ro also uses Playwright now — a plain fetch() (even with realistic
+// browser headers) gets HTTP 403 within ~200ms, which looks like an
+// edge/WAF-level IP block rather than a fingerprint check. A real browser
+// runs on the same Render IP either way, so this only helps if OLX is
+// actually keying off "no JS execution" rather than the IP itself.
 var ADAPTERS = {
   'Autovit.ro': autovit,
   'AutoScout24.ro': as24.ro,
@@ -25,7 +30,12 @@ var ADAPTERS = {
 };
 
 var MAX_BRANDS = 6;
+// "Heavy" adapters (OLX.ro, which now drives a real headless browser per
+// brand) get far fewer brand runs and a longer timeout — each one is much
+// more expensive than a plain HTTP fetch.
+var MAX_BRANDS_HEAVY = 2;
 var PER_REQUEST_TIMEOUT_MS = 9000;
+var PER_REQUEST_TIMEOUT_MS_HEAVY = 25000;
 
 function dedupe(listings) {
   var seen = {};
@@ -100,9 +110,13 @@ async function runSearch(filters) {
   var requestedSources = (filters.sources && filters.sources.length) ? filters.sources : Object.keys(ADAPTERS);
   var siteNames = requestedSources.filter(function (s) { return ADAPTERS[s]; });
   var brands = (filters.brands || []).slice(0, MAX_BRANDS);
+  var brandsHeavy = brands.slice(0, MAX_BRANDS_HEAVY);
 
   var perSite = await Promise.all(siteNames.map(function (siteName) {
-    return runSite(ADAPTERS[siteName], siteName, filters, brands, PER_REQUEST_TIMEOUT_MS);
+    var adapter = ADAPTERS[siteName];
+    return runSite(adapter, siteName, filters,
+      adapter.heavy ? brandsHeavy : brands,
+      adapter.heavy ? PER_REQUEST_TIMEOUT_MS_HEAVY : PER_REQUEST_TIMEOUT_MS);
   }));
 
   var sources = perSite.map(function (r) { return r.entry; });
