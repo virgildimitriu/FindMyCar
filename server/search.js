@@ -69,6 +69,7 @@ function applyFilters(listings, filters) {
     if (filters.yearMin && l.year && l.year < Number(filters.yearMin)) return false;
     if (filters.engineMax && l.engineSize && l.engineSize > Number(filters.engineMax)) return false;
     if (filters.hpMin && l.horsepower && l.horsepower < Number(filters.hpMin)) return false;
+    if (filters.mileageMax && l.mileage && l.mileage > Number(filters.mileageMax)) return false;
     if (filters.transmission && filters.transmission !== 'Either' && l.transmission !== filters.transmission) return false;
     if (filters.country && filters.country !== 'both' && l.country !== filters.country) return false;
     // accidentFree and required `features` are deliberately NOT enforced here:

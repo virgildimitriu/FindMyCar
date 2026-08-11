@@ -10,6 +10,7 @@ function buildUrl(filters, brand) {
   if (filters.yearMin) p.push('search%5Bfilter_float_year%3Afrom%5D=' + encodeURIComponent(filters.yearMin));
   if (filters.hpMin) p.push('search%5Bfilter_float_engine_power%3Afrom%5D=' + encodeURIComponent(filters.hpMin));
   if (filters.engineMax) p.push('search%5Bfilter_float_engine_capacity%3Ato%5D=' + encodeURIComponent(filters.engineMax));
+  if (filters.mileageMax) p.push('search%5Bfilter_float_mileage%3Ato%5D=' + encodeURIComponent(filters.mileageMax));
   if (filters.transmission === 'Automatic') p.push('search%5Bfilter_enum_gearbox%5D=automatic');
   if (filters.transmission === 'Manual') p.push('search%5Bfilter_enum_gearbox%5D=manual');
   if (filters.model) p.push('search%5Bfilter_enum_model%5D=' + encodeURIComponent(filters.model));

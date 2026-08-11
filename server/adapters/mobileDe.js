@@ -13,6 +13,7 @@ function buildUrl(filters) {
   if (filters.priceMax) p.push('maxPrice=' + encodeURIComponent(filters.priceMax));
   if (filters.yearMin) p.push('minFirstRegistrationDate=' + encodeURIComponent(filters.yearMin) + '-01-01');
   if (filters.hpMin) p.push('minPowerAsArray=HP', 'minPower=' + encodeURIComponent(filters.hpMin));
+  if (filters.mileageMax) p.push('maxMileage=' + encodeURIComponent(filters.mileageMax));
   if (filters.transmission === 'Automatic') p.push('transmissions=AUTOMATIC_GEAR');
   if (filters.transmission === 'Manual') p.push('transmissions=MANUAL_GEAR');
   return 'https://suchen.mobile.de/fahrzeuge/search.html?' + p.join('&');

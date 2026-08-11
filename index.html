@@ -292,12 +292,12 @@ var LS_PREFS    = 'findmycar_prefs_v1';
 
 function blankFilters() {
   return { brands:[], model:'', priceMin:'', priceMax:'', yearMin:'', engineMax:'',
-    hpMin:'', transmission:'Either', features:[], country:'both',
+    hpMin:'', mileageMax:'', transmission:'Either', features:[], country:'both',
     accidentFree:false, sources:[] };
 }
 function defaultFilters() {
   return { brands:['Volkswagen','Škoda','Kia'], model:'', priceMin:14000, priceMax:20000,
-    yearMin:2023, engineMax:2000, hpMin:150, transmission:'Automatic',
+    yearMin:2023, engineMax:2000, hpMin:150, mileageMax:'', transmission:'Automatic',
     features:['rearCamera'], country:'both', accidentFree:true, sources:[] };
 }
 function blankForm() {
@@ -413,6 +413,7 @@ function matchesFilters(l, filters) {
   if (f.yearMin !== '' && f.yearMin != null && l.year < Number(f.yearMin)) return false;
   if (f.engineMax !== '' && f.engineMax != null && l.engineSize > Number(f.engineMax)) return false;
   if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
+  if (f.mileageMax !== '' && f.mileageMax != null && l.mileage > Number(f.mileageMax)) return false;
   if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
   // Portal search-result pages don't expose equipment or accident history —
   // only the listing's own page does — so automated results always come in
@@ -485,6 +486,7 @@ function searchUrls() {
         if (f.yearMin)  p.push('search%5Bfilter_float_year%3Afrom%5D=' + f.yearMin);
         if (f.hpMin)    p.push('search%5Bfilter_float_engine_power%3Afrom%5D=' + f.hpMin);
         if (f.engineMax) p.push('search%5Bfilter_float_engine_capacity%3Ato%5D=' + f.engineMax);
+        if (f.mileageMax) p.push('search%5Bfilter_float_mileage%3Ato%5D=' + f.mileageMax);
         if (auto)       p.push('search%5Bfilter_enum_gearbox%5D=automatic');
         u = 'https://www.autovit.ro/autoturisme' + (s ? '/' + s : '') +
             (p.length ? '?' + p.join('&') : '');
@@ -495,6 +497,7 @@ function searchUrls() {
         if (f.priceMax) p.push('priceto=' + f.priceMax);
         if (f.yearMin)  p.push('fregfrom=' + f.yearMin);
         if (f.hpMin)    p.push('powerfrom=' + f.hpMin, 'powertype=hp');
+        if (f.mileageMax) p.push('kmto=' + f.mileageMax);
         if (auto)       p.push('gear=A');
         p.push('sort=price', 'desc=0');
         u = 'https://' + host + '/lst' + (s ? '/' + s : '') + '?' + p.join('&');
@@ -505,6 +508,7 @@ function searchUrls() {
         if (f.priceMax) p.push('maxPrice=' + f.priceMax);
         if (f.yearMin)  p.push('minFirstRegistrationDate=' + f.yearMin + '-01-01');
         if (f.hpMin)    p.push('minPowerAsArray=HP', 'minPower=' + f.hpMin);
+        if (f.mileageMax) p.push('maxMileage=' + f.mileageMax);
         if (auto)       p.push('transmissions=AUTOMATIC_GEAR');
         u = 'https://suchen.mobile.de/fahrzeuge/search.html?' + p.join('&');
 
@@ -1101,6 +1105,7 @@ function viewFilters() {
       numField('Year from', 'yearMin'),
       numField('Max engine (cm³)', 'engineMax'),
       numField('Min horsepower', 'hpMin'),
+      numField('Max mileage (km)', 'mileageMax'),
       el('div', null, [
         el('label.field', { text: 'Transmission' }),
         el('select', {

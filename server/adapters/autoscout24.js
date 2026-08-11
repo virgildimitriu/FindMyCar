@@ -7,6 +7,7 @@ function buildUrl(host, filters, brand) {
   if (filters.priceMax) p.push('priceto=' + encodeURIComponent(filters.priceMax));
   if (filters.yearMin) p.push('fregfrom=' + encodeURIComponent(filters.yearMin));
   if (filters.hpMin) p.push('powerfrom=' + encodeURIComponent(filters.hpMin), 'powertype=hp');
+  if (filters.mileageMax) p.push('kmto=' + encodeURIComponent(filters.mileageMax));
   if (filters.transmission === 'Automatic') p.push('gear=A');
   if (filters.transmission === 'Manual') p.push('gear=M');
   p.push('sort=price', 'desc=0');
