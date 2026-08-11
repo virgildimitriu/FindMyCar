@@ -293,7 +293,7 @@ var LS_LISTINGS = 'findmycar_listings_v1';
 
 function blankFilters() {
   return { brands:[], model:'', priceMin:'', priceMax:'', yearMin:'', engineMax:'',
-    hpMin:'', mileageMax:'', transmission:'Either', fuelType:'Either', features:[], country:'both',
+    hpMin:'', mileageMax:'', transmission:'Either', fuelTypes:[], features:[], country:'both',
     accidentFree:false, sources:[] };
 }
 function defaultFilters() {
@@ -302,7 +302,7 @@ function defaultFilters() {
   // results on first use — a confusing "0 matches" with no obvious cause.
   return { brands:['Volkswagen','Škoda','Kia'], model:'', priceMin:14000, priceMax:20000,
     yearMin:2023, engineMax:2000, hpMin:150, mileageMax:'', transmission:'Automatic',
-    fuelType:'Either', features:[], country:'both', accidentFree:true, sources:[] };
+    fuelTypes:[], features:[], country:'both', accidentFree:true, sources:[] };
 }
 function blankForm() {
   return { title:'', brand:'Volkswagen', model:'', trim:'', year:'', price:'', mileage:'',
@@ -429,7 +429,7 @@ function matchesFilters(l, filters) {
   if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
   if (f.mileageMax !== '' && f.mileageMax != null && l.mileage > Number(f.mileageMax)) return false;
   if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
-  if (f.fuelType && f.fuelType !== 'Either' && l.fuelType !== f.fuelType) return false;
+  if ((f.fuelTypes || []).length && f.fuelTypes.indexOf(l.fuelType) === -1) return false;
   if (f.features.length && !f.features.every(function (k) {
     return (l.features || []).indexOf(k) !== -1; })) return false;
   if (f.country !== 'both' && l.country !== f.country) return false;
@@ -677,8 +677,13 @@ function parsePaste() {
   /* Grouped-with-separator number (18.000 / 18,000 / 18 000) or a bare 4-7 digit
      run. Deliberately does NOT allow a loose run of digits/separators, otherwise
      it can swallow digits from an unrelated earlier number (e.g. the year)
-     across a comma and produce a bogus oversized value. */
-  var NUM = '(\\d{1,3}(?:[.,\\s]\\d{3})+|\\d{4,7}|\\d{1,3})';
+     across a comma and produce a bogus oversized value. The leading \b is
+     load-bearing too: without it a match can start mid-way through a LARGER
+     adjacent number — e.g. "Capacitate: 1422  CP: 75" misreading the tail of
+     "1422" (engine cm³) as "422 CP" (confirmed live: a 2004 Polo 1.4 TDI
+     came back showing 422 hp). Digits are \w chars, so \b never falls
+     mid-run of a longer number — it forces the match to the number's start. */
+  var NUM = '\\b(\\d{1,3}(?:[.,\\s]\\d{3})+|\\d{4,7}|\\d{1,3})';
 
   var price = t.match(new RegExp('(?:€|eur)\\s*' + NUM)) || t.match(new RegExp(NUM + '\\s*(?:€|eur)'));
   if (price) { v = num(price[1]); if (v && v > 500 && v < 500000) f.price = String(v); }
@@ -696,9 +701,25 @@ function parsePaste() {
     if (litres) f.engineSize = String(Math.round(parseFloat(litres[1].replace(',', '.')) * 1000));
   }
 
-  var hp = t.match(/(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
-  if (hp) f.horsepower = hp[1];
-  else { var kw = t.match(/(\d{2,3})\s*kw\b/); if (kw) f.horsepower = String(Math.round(parseInt(kw[1], 10) * 1.36)); }
+  // "LABEL: value" listings (e.g. "CP: 75 KW: 55") checked first and with
+  // priority over kW — natural-phrasing matching below would otherwise read
+  // "75 KW" out of that string, misattributing the CP field's value to kW
+  // and multiplying it by 1.36 (confirmed live: a real 75 CP became 102).
+  var hpLabeled = t.match(/\bcp\s*:?\s*(\d{2,3})\b/) || t.match(/\bhp\s*:?\s*(\d{2,3})\b/) ||
+    t.match(/\bps\s*:?\s*(\d{2,3})\b/);
+  if (hpLabeled) f.horsepower = hpLabeled[1];
+  else {
+    var hp = t.match(/\b(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
+    if (hp) f.horsepower = hp[1];
+    else {
+      var kwLabeled = t.match(/\bkw\s*:?\s*(\d{2,3})\b/);
+      if (kwLabeled) f.horsepower = String(Math.round(parseInt(kwLabeled[1], 10) * 1.36));
+      else {
+        var kw = t.match(/\b(\d{2,3})\s*kw\b/);
+        if (kw) f.horsepower = String(Math.round(parseInt(kw[1], 10) * 1.36));
+      }
+    }
+  }
 
   if (/\b(automat|automatic|automatik|dsg|s.tronic|tiptronic|dct|cutie automat)/.test(t)) f.transmission = 'Automatic';
   else if (/\b(manual|manuala|manuală|schaltgetriebe)/.test(t)) f.transmission = 'Manual';
@@ -1156,15 +1177,27 @@ function viewFilters() {
           return el('option', { value: o, text: o, selected: f.transmission === o });
         }))
       ]),
-      el('div', null, [
-        el('label.field', { text: 'Fuel' }),
-        el('select', {
-          onchange: function (e) { setFilter('fuelType', e.target.value); render(); }
-        }, ['Either', 'Petrol', 'Diesel', 'Hybrid', 'Plug-in Hybrid', 'Electric'].map(function (o) {
-          return el('option', { value: o, text: o, selected: (f.fuelType || 'Either') === o });
-        }))
-      ])
     ]),
+
+    el('div.sec-label', { text: 'Fuel' }),
+    el('select', {
+      style: 'max-width:300px;margin-bottom:12px',
+      'aria-label': 'Add a fuel type',
+      onchange: function (e) {
+        var v = e.target.value;
+        if (v && f.fuelTypes.indexOf(v) === -1) { f.fuelTypes.push(v); render(); }
+        else e.target.value = '';
+      }
+    }, [el('option', { value: '', text: 'Select a fuel type…' })].concat(
+      ['Petrol', 'Diesel', 'Hybrid', 'Plug-in Hybrid', 'Electric']
+        .filter(function (x) { return f.fuelTypes.indexOf(x) === -1; })
+        .map(function (x) { return el('option', { value: x, text: x }); })
+    )),
+    chipRow(
+      f.fuelTypes.map(function (x) { return { label: x, value: x }; }),
+      function (x) { toggleIn(f.fuelTypes, x); render(); },
+      'Any fuel type'
+    ),
 
     el('div.sec-label', { text: 'Required features' }),
     el('select', {

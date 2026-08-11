@@ -24,9 +24,9 @@ function mapCountry(code) {
 function extractHorsepower(vehicleDetails) {
   var e = (vehicleDetails || []).find(function (d) { return d.iconName === 'speedometer'; });
   if (!e) return 0;
-  var m = /(\d+)\s*(?:cp|ps|hp)/i.exec(e.data || '');
+  var m = /\b(\d+)\s*(?:cp|ps|hp)/i.exec(e.data || '');
   if (m) return parseInt(m[1], 10);
-  var kw = /(\d+)\s*kw/i.exec(e.data || '');
+  var kw = /\b(\d+)\s*kw/i.exec(e.data || '');
   if (kw) return Math.round(parseInt(kw[1], 10) * 1.36);
   return 0;
 }

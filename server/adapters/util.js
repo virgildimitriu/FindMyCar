@@ -119,7 +119,14 @@ var BRANDS = ['Audi', 'BMW', 'Citroën', 'Cupra', 'Dacia', 'Fiat', 'Ford', 'Hond
   'Mazda', 'Mercedes-Benz', 'Nissan', 'Opel', 'Peugeot', 'Renault', 'Seat', 'Škoda', 'Suzuki',
   'Toyota', 'Volkswagen', 'Volvo'];
 
-var NUM_PATTERN = '(\\d{1,3}(?:[.,\\s]\\d{3})+|\\d{4,7}|\\d{1,3})';
+// \b BEFORE the digit group is load-bearing: without it, a number regex can
+// match the tail of a LARGER unrelated number sitting right next to the unit
+// text — e.g. "Capacitate cilindrică: 1422  CP: 75" would otherwise read the
+// last 3 digits of the 1422cc engine size as "422 CP" (a real bug found via
+// live data: a 2004 VW Polo 1.4 TDI came back showing 422 hp). Digits are
+// \w characters, so \b never occurs mid-run of a longer number — this forces
+// the match to start at the true beginning of a number.
+var NUM_PATTERN = '\\b(\\d{1,3}(?:[.,\\s]\\d{3})+|\\d{4,7}|\\d{1,3})';
 function extractMileage(text) {
   var m = String(text || '').toLowerCase().match(new RegExp(NUM_PATTERN + '\\s*(?:km|kilometri|kilometer)'));
   if (!m) return 0;
@@ -128,9 +135,20 @@ function extractMileage(text) {
 }
 function extractHorsepower(text) {
   var t = String(text || '').toLowerCase();
-  var m = t.match(/(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
+  // Some sites use "LABEL: value" field listings (e.g. "CP: 75 KW: 55")
+  // instead of natural phrasing ("75 CP"). Checked first and with priority
+  // over kW, or "75 KW" from that string would otherwise get matched as the
+  // NUMBER-then-unit pattern below — misreading the CP field's value as if
+  // it were the (different, adjacent) kW figure and multiplying it by 1.36
+  // (confirmed live: turned a real 75 CP into a bogus 102).
+  var cpLabeled = t.match(/\bcp\s*:?\s*(\d{2,3})\b/) || t.match(/\bhp\s*:?\s*(\d{2,3})\b/) ||
+    t.match(/\bps\s*:?\s*(\d{2,3})\b/);
+  if (cpLabeled) return parseInt(cpLabeled[1], 10);
+  var m = t.match(/\b(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
   if (m) return parseInt(m[1], 10);
-  var kw = t.match(/(\d{2,3})\s*kw\b/);
+  var kwLabeled = t.match(/\bkw\s*:?\s*(\d{2,3})\b/);
+  if (kwLabeled) return Math.round(parseInt(kwLabeled[1], 10) * 1.36);
+  var kw = t.match(/\b(\d{2,3})\s*kw\b/);
   if (kw) return Math.round(parseInt(kw[1], 10) * 1.36);
   return 0;
 }
