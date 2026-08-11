@@ -9,4 +9,10 @@ services:
     envVars:
       - key: CONTACT_EMAIL
         value: virgildimitriu@yahoo.com
+      # Installs Playwright's browsers into node_modules instead of the home
+      # cache dir. Render's build and runtime steps don't share the home
+      # cache, so browsers "installed" during build were missing at runtime
+      # (Executable doesn't exist) — node_modules does carry over.
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: "0"
     healthCheckPath: /health
