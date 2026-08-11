@@ -303,7 +303,7 @@ function defaultFilters() {
 function blankForm() {
   return { title:'', brand:'Volkswagen', model:'', trim:'', year:'', price:'', mileage:'',
     engineSize:'', horsepower:'', transmission:'Automatic', fuelType:'Petrol', features:[],
-    sourceSite:'Autovit.ro', url:'', country:'Romania', accidentStatus:'accident-free' };
+    sourceSite:'Autovit.ro', url:'', country:'Romania', accidentStatus:'accident-free', riskNotes:[] };
 }
 function seedListings() {
   return [
@@ -688,8 +688,31 @@ function parsePaste() {
   else if (/accidentat|unfallschaden|repaired damage|daune reparate/.test(t)) f.accidentStatus = 'repaired damage';
   else f.accidentStatus = 'unknown';
 
+  /* Caution signals worth a manual look before trusting a listing — separate
+     from the fields above because these are judgment calls, not facts to
+     overwrite silently. Kept intentionally narrow (regex over free text is
+     unreliable for anything subtler than a few fixed phrases). */
+  var riskNotes = [];
+  if (/\btaxi\b|inchiriere auto|închiriere auto|rent.?a.?car|mietwagen|flottenwagen|flottenfahrzeug|leihwagen/.test(t)) {
+    riskNotes.push('possible taxi/rental/fleet history');
+  }
+  if (/export.?only|nur.?f[uü]r.?export|doar export|numai (?:la )?export|only for export/.test(t)) {
+    riskNotes.push('listed as export-only');
+  }
+  var ownerMatch = t.match(/(\d+)\.?\s*(?:hand|vorbesitzer)/) || t.match(/(\d+)\s*proprietari/);
+  if (ownerMatch) {
+    var ownerN = parseInt(ownerMatch[1], 10);
+    if (/hand/.test(ownerMatch[0]) && ownerN === 1) { /* "1. Hand" = original owner, not a caution */ }
+    else if (ownerN > 2) riskNotes.push(ownerN + ' previous owners');
+  }
+  f.riskNotes = riskNotes;
+
   var featMap = {
-    rearCamera: /camer[aă] (?:video )?(?:spate|marsarier)|r[uü]ckfahrkamera|rear.?view camera|reversing camera/,
+    // Strict on rear-camera claims: only accept phrasing that specifically means
+    // a reversing camera. "Frontkamera" (lane assist/ACC cam), "Einparkhilfe"
+    // (parking sensors) and bare "Park Assist" are deliberately excluded —
+    // none of them guarantee an actual camera.
+    rearCamera: /camer[aă] (?:video )?(?:spate|marsarier)|r[uü]ckfahrkamera|\brfk\b|rear.?view camera|reversing camera|area view/,
     parkingSensors: /senzori (?:de )?parcare|parksensor|pdc|parking sensors/,
     cruiseControl: /(?:tempomat|cruise control|adaptive cruise|acc\b)/,
     heatedSeats: /scaune (?:încălzite|incalzite)|sitzheizung|heated seats/,
@@ -727,9 +750,11 @@ function parsePaste() {
     .filter(function (k) { return f[k]; }).length + found.length;
 
   S.formData = f;
-  S.pasteFeedback = filled
+  var msg = filled
     ? filled + ' fields filled from the paste — check them before saving.'
     : 'Could not read much from that text. Fill the fields in manually.';
+  if (riskNotes.length) msg += ' ⚠ Flagged: ' + riskNotes.join(', ') + '.';
+  S.pasteFeedback = msg;
   render();
 }
 
@@ -759,6 +784,7 @@ function saveListing() {
     country: f.country,
     accidentStatus: f.accidentStatus,
     accidentFree: f.accidentStatus === 'accident-free',
+    riskNotes: (f.riskNotes || []).slice(),
     shortlisted: false,
     addedAt: new Date().toISOString()
   };
@@ -810,6 +836,11 @@ function featuresText(keys) {
     return f ? f.label : null;
   }).filter(Boolean);
   return out.length ? out.join(', ') : '—';
+}
+function historyText(l) {
+  var base = l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown');
+  var risks = l.riskNotes || [];
+  return risks.length ? base + ' · ⚠ ' + risks.join(', ') : base;
 }
 
 /* =====================================================================
@@ -1210,12 +1241,15 @@ function viewMobileDeCallout() {
            'background:var(--accent-soft);border-radius:8px;font-size:12.5px;display:flex;' +
            'align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap'
   }, [
-    el('span', { text: "mobile.de blocks automated search — browse it yourself, then paste a listing you like into a row's Edit action." }),
-    el('a', {
-      href: url, target: '_blank', rel: 'noopener noreferrer',
-      style: 'color:var(--accent-deep);font-weight:600;text-decoration:none;white-space:nowrap',
-      text: 'Open mobile.de ↗'
-    })
+    el('span', { text: 'mobile.de blocks automated search — browse it yourself, then paste a listing you like below.' }),
+    el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+      el('a', {
+        href: url, target: '_blank', rel: 'noopener noreferrer',
+        style: 'color:var(--accent-deep);font-weight:600;text-decoration:none;white-space:nowrap',
+        text: 'Open mobile.de ↗'
+      }),
+      el('button.btn.btn-sm', { onclick: openAdd, text: 'Paste a listing' })
+    ])
   ]);
 }
 
@@ -1376,7 +1410,7 @@ function viewCard(l) {
     el('div', {
       cls: l.accidentFree === true ? 'ok' : 'warnc',
       style: 'font-size:12.5px',
-      text: l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown')
+      text: historyText(l)
     }),
     el('div', {
       style: 'font-size:12.5px;color:var(--text-2)', text: featuresText(l.features)
@@ -1452,7 +1486,7 @@ function viewTable(list) {
           el('td', {
             cls: l.accidentFree === true ? 'ok' : 'warnc',
             style: 'font-size:12.5px',
-            text: l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown')
+            text: historyText(l)
           }),
           el('td', {
             style: 'max-width:220px;font-size:12.5px;color:var(--text-2)',
@@ -1565,7 +1599,7 @@ function viewAddSheet() {
         el('button.x', { onclick: closeModal, 'aria-label': 'Close', text: '×' })
       ]),
 
-      !S.editId ? el('div', { style: 'margin-bottom:16px' }, [
+      el('div', { style: 'margin-bottom:16px' }, [
         el('div.sec-label', { text: 'Paste from the portal' }),
         el('div.tiny', {
           style: 'margin-bottom:8px',
@@ -1596,7 +1630,7 @@ function viewAddSheet() {
           })
         ]),
         S.pasteFeedback ? el('div.note', { text: S.pasteFeedback }) : null
-      ]) : null,
+      ]),
 
       el('div.sec-label', { text: 'Listing details' }),
       el('div', { style: 'margin-bottom:12px' }, [txt('Title', 'title', { ph: 'VW Tiguan Life 2.0 TDI DSG' })]),
@@ -1665,8 +1699,7 @@ function viewCompareSheet() {
     ['Transmission', function (l) { return l.transmission; }],
     ['Fuel', function (l) { return l.fuelType; }],
     ['Features', function (l) { return featuresText(l.features); }],
-    ['Accident history', function (l) {
-      return l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown'); }],
+    ['Accident history', function (l) { return historyText(l); }],
     ['Source', function (l) { return l.sourceSite; }],
     ['Market', function (l) { return l.country; }]
   ];
