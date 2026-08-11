@@ -1,0 +1,13 @@
+{
+  "name": "findmycar-search-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Search backend for Find My Car: fetches Autovit.ro / AutoScout24.ro / AutoScout24.de (mobile.de best-effort) and normalises listings.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

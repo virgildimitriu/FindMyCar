@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: findmycar-search-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: CONTACT_EMAIL
+        value: virgildimitriu@yahoo.com
+    healthCheckPath: /health

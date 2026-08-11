@@ -276,6 +276,12 @@ var FEATURES = [
 var SITES = ['Autovit.ro','AutoScout24.ro','AutoScout24.de','mobile.de','OLX.ro','Carvago'];
 var GERMAN_SITES = { 'AutoScout24.de':1, 'mobile.de':1 };
 
+/* Sites the backend can query automatically. The rest (OLX.ro, Carvago) stay
+   deep-link-only — no adapter for them yet. */
+var AUTO_SITES = { 'Autovit.ro':1, 'AutoScout24.ro':1, 'AutoScout24.de':1, 'mobile.de':1 };
+var API_BASE = (typeof window !== 'undefined' && window.FINDMYCAR_API_BASE) ||
+  'https://findmycar-search-api.onrender.com';
+
 var LS_SEARCHES = 'findmycar_searches_v1';
 var LS_LISTINGS = 'findmycar_listings_v1';
 var LS_PREFS    = 'findmycar_prefs_v1';
@@ -320,6 +326,9 @@ var S = {
   formData: blankForm(),
   pasteText: '',
   pasteFeedback: '',
+  isSearching: false,
+  searchStatus: '',
+  searchNotes: [],
   transportEstimate: 450,
   rarFees: 800,
   width: window.innerWidth
@@ -490,6 +499,90 @@ function searchUrls() {
     });
   });
   return out;
+}
+
+/* ---- automated search against the backend adapters ----
+   Only Autovit.ro / AutoScout24.ro / AutoScout24.de / mobile.de can be
+   queried automatically (mobile.de is best-effort — it sits behind bot
+   protection and usually comes back as an error). OLX.ro and Carvago have
+   no adapter, so they only ever show up as deep links via searchUrls(). */
+function requestedAutoSites() {
+  var chosen = (S.filters.sources || []).length ? S.filters.sources : SITES;
+  return chosen.filter(function (s) { return AUTO_SITES[s]; });
+}
+
+function mergeListings(fetched) {
+  var byId = {};
+  S.listings.forEach(function (l) { byId[l.id] = l; });
+  var added = 0, updated = 0;
+  fetched.forEach(function (l) {
+    var prev = byId[l.id];
+    if (prev) {
+      var rec = Object.assign({}, l, { shortlisted: prev.shortlisted, addedAt: prev.addedAt || l.firstSeenAt });
+      byId[l.id] = rec;
+      updated++;
+    } else {
+      byId[l.id] = Object.assign({ shortlisted: false, addedAt: l.firstSeenAt }, l);
+      added++;
+    }
+  });
+  S.listings = Object.keys(byId).map(function (k) { return byId[k]; });
+  persistListings();
+  return { added: added, updated: updated };
+}
+
+function summariseSources(sources) {
+  return sources.map(function (s) {
+    if (s.status === 'ok') return s.site + ': ' + s.count;
+    if (s.status === 'partial') return s.site + ': ' + s.count + ' (partial)';
+    return s.site + ': failed';
+  }).join(' · ');
+}
+
+function runAutoSearch() {
+  var sites = requestedAutoSites();
+  if (!sites.length) {
+    S.searchStatus = 'None of the selected sites can be searched automatically — use the links below instead.';
+    S.showLinks = true;
+    render();
+    scrollToId('links');
+    return;
+  }
+  S.isSearching = true;
+  S.searchStatus = 'Searching ' + sites.join(', ') + '…';
+  S.showLinks = true;
+  render();
+  scrollToId('results-top');
+
+  var controller = new AbortController();
+  var timer = setTimeout(function () { controller.abort(); }, 45000);
+
+  fetch(API_BASE + '/api/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: controller.signal,
+    body: JSON.stringify(Object.assign({}, S.filters, { sources: sites, limit: 200 }))
+  }).then(function (res) {
+    clearTimeout(timer);
+    if (!res.ok) return res.json().then(function (e) { throw new Error(e.error || ('HTTP ' + res.status)); });
+    return res.json();
+  }).then(function (data) {
+    var merge = mergeListings(data.listings || []);
+    var summary = (data.listings || []).length + ' results — ' + summariseSources(data.sources || []) +
+      '. ' + merge.added + ' new, ' + merge.updated + ' updated.';
+    S.searchStatus = summary;
+    S.searchNotes = data.notes || [];
+    S.isSearching = false;
+    render();
+  }).catch(function (err) {
+    clearTimeout(timer);
+    var msg = err.name === 'AbortError'
+      ? 'The search API took too long to respond (it may be waking up from sleep on a free host — try again in a moment).'
+      : 'Search failed: ' + err.message + '. The API may be offline — try the links below instead.';
+    S.searchStatus = msg;
+    S.isSearching = false;
+    render();
+  });
 }
 
 /* ---- paste parser: pull structured fields out of a copied listing ---- */
@@ -1054,10 +1147,16 @@ function viewFilters() {
       }),
       el('button.btn', { onclick: saveSearch, text: S.activeSearchId ? 'Save / update' : 'Save search' }),
       el('button.btn.btn-primary', {
-        onclick: function () { S.showLinks = true; render(); scrollToId('links'); },
-        text: 'Search'
+        onclick: runAutoSearch,
+        disabled: S.isSearching,
+        text: S.isSearching ? 'Searching…' : 'Search'
       })
     ]),
+
+    S.searchStatus ? el('div.note', { id: 'results-top', style: 'margin-top:10px', text: S.searchStatus }) : null,
+    (S.searchNotes && S.searchNotes.length) ? el('div', { style: 'margin-top:6px' },
+      S.searchNotes.map(function (n) { return el('div.tiny', { style: 'margin-top:2px', text: n }); })
+    ) : null,
 
     S.showFilters ? body : null
   ]);
