@@ -15,38 +15,43 @@ function buildUrl(filters, brand) {
   return 'https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/' + (slug ? slug + '/' : '');
 }
 
-// OLX rejects a plain fetch() — HTTP 403 within ~200ms even with a full
-// realistic browser header set, which looks like an edge/WAF-level block
-// rather than a fingerprint check. A real headless browser is the next thing
-// to try: it still runs on this same server/IP, so it won't help if the
-// block is purely IP-based, but it will if OLX is instead keying off the
-// absence of real JS execution / TLS fingerprint. Reuses the working
-// Playwright config from the (abandoned) OpenLane adapter — channel
-// pinned, browsers installed into node_modules via PLAYWRIGHT_BROWSERS_PATH.
-var chromium;
-try { chromium = require('playwright').chromium; } catch (e) { chromium = null; }
-
-async function fetchHtmlViaBrowser(url, timeoutMs) {
-  if (!chromium) throw new Error('playwright_missing: headless browser not installed');
-  var browser = await chromium.launch({
-    headless: true,
-    channel: 'chromium',
-    args: ['--no-sandbox', '--disable-dev-shm-usage']
-  });
+// OLX blocks this adapter no matter what's asked of it — HTTP 403 to a
+// plain fetch (even with a full realistic browser header set), and HTTP 405
+// to an actual headless Chromium instance with a real JS/TLS fingerprint.
+// Both fail fast-ish and consistently, which points at an edge/WAF block on
+// Render's IP range rather than anything about the request itself — no
+// client-side fix reaches that. Left as a plain fetch (cheap, fails in
+// ~200-400ms) rather than paying for a browser launch that fails anyway;
+// same honest-failure treatment as mobile.de.
+async function fetchHtmlBrowserLike(url, timeoutMs) {
+  var controller = new AbortController();
+  var timer = setTimeout(function () { controller.abort(); }, timeoutMs || 10000);
   try {
-    // Deliberately not overriding userAgent — Chromium's own default is more
-    // internally consistent (matches its real TLS/JS fingerprint) than a
-    // hand-crafted one would be.
-    var page = await browser.newPage({ locale: 'ro-RO' });
-    var res = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs || 20000 });
-    if (!res || !res.ok()) {
-      var err = new Error('HTTP ' + (res ? res.status() : 'no_response'));
+    var res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+          '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
+        'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'Upgrade-Insecure-Requests': '1'
+      }
+    });
+    if (!res.ok) {
+      var err = new Error('HTTP ' + res.status);
+      err.status = res.status;
       throw err;
     }
-    await page.waitForSelector('[data-cy="l-card"]', { timeout: 8000 }).catch(function () {});
-    return await page.content();
+    return await res.text();
   } finally {
-    await browser.close();
+    clearTimeout(timer);
   }
 }
 
@@ -139,10 +144,10 @@ function normalise(card) {
 
 async function search(filters, brand, timeoutMs) {
   var url = buildUrl(filters, brand);
-  var html = await fetchHtmlViaBrowser(url, timeoutMs);
+  var html = await fetchHtmlBrowserLike(url, timeoutMs);
   var cards = extractCards(html);
   if (!cards.length) throw new Error('selector_miss: no l-card blocks found');
   return cards.map(normalise).filter(function (l) { return l && l.url && l.title; });
 }
 
-module.exports = { site: 'OLX.ro', search: search, buildUrl: buildUrl, heavy: true };
+module.exports = { site: 'OLX.ro', search: search, buildUrl: buildUrl };

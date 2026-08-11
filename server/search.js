@@ -9,17 +9,18 @@ var util = require('./adapters/util');
 // OpenLane.eu was attempted via a headless browser (Playwright) but dropped:
 // its data only exists after the site's own JS runs, which needed a real
 // browser to fetch server-side — after fixing three separate Render
-// deploy/runtime issues (root-only apt install, missing headless-shell
-// binary, browsers cache not surviving build→runtime) it launched
-// successfully but returned 0 results, likely a cookie-consent modal
-// blocking the real request in headless mode. It's deep-link-only now,
-// same as mobile.de.
+// deploy/runtime issues it launched successfully but returned 0 results,
+// likely a cookie-consent modal blocking the real request in headless mode.
 //
-// OLX.ro also uses Playwright now — a plain fetch() (even with realistic
-// browser headers) gets HTTP 403 within ~200ms, which looks like an
-// edge/WAF-level IP block rather than a fingerprint check. A real browser
-// runs on the same Render IP either way, so this only helps if OLX is
-// actually keying off "no JS execution" rather than the IP itself.
+// OLX.ro tried three things in a row: a plain fetch (HTTP 403), a plain
+// fetch with realistic browser headers (still 403), and a real headless
+// Chromium instance (HTTP 405 instead — still blocked, just differently).
+// That a genuine browser fingerprint got rejected too points at an
+// edge/WAF-level block on Render's IP range rather than anything
+// client-side-fixable, so it's back to a cheap plain fetch that fails fast
+// and honestly, rather than paying for a browser launch that fails anyway.
+//
+// Both are deep-link-only now, same as mobile.de.
 var ADAPTERS = {
   'Autovit.ro': autovit,
   'AutoScout24.ro': as24.ro,
@@ -30,12 +31,7 @@ var ADAPTERS = {
 };
 
 var MAX_BRANDS = 6;
-// "Heavy" adapters (OLX.ro, which now drives a real headless browser per
-// brand) get far fewer brand runs and a longer timeout — each one is much
-// more expensive than a plain HTTP fetch.
-var MAX_BRANDS_HEAVY = 2;
 var PER_REQUEST_TIMEOUT_MS = 9000;
-var PER_REQUEST_TIMEOUT_MS_HEAVY = 25000;
 
 function dedupe(listings) {
   var seen = {};
@@ -110,13 +106,9 @@ async function runSearch(filters) {
   var requestedSources = (filters.sources && filters.sources.length) ? filters.sources : Object.keys(ADAPTERS);
   var siteNames = requestedSources.filter(function (s) { return ADAPTERS[s]; });
   var brands = (filters.brands || []).slice(0, MAX_BRANDS);
-  var brandsHeavy = brands.slice(0, MAX_BRANDS_HEAVY);
 
   var perSite = await Promise.all(siteNames.map(function (siteName) {
-    var adapter = ADAPTERS[siteName];
-    return runSite(adapter, siteName, filters,
-      adapter.heavy ? brandsHeavy : brands,
-      adapter.heavy ? PER_REQUEST_TIMEOUT_MS_HEAVY : PER_REQUEST_TIMEOUT_MS);
+    return runSite(ADAPTERS[siteName], siteName, filters, brands, PER_REQUEST_TIMEOUT_MS);
   }));
 
   var sources = perSite.map(function (r) { return r.entry; });
