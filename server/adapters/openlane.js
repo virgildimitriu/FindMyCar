@@ -83,6 +83,7 @@ async function search(filters, brand, timeoutMs) {
   var url = buildUrl(filters, brand);
   var browser = await chromium.launch({
     headless: true,
+    channel: 'chromium',
     args: ['--no-sandbox', '--disable-dev-shm-usage']
   });
   try {

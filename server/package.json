@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall": "npx playwright install chromium"
+    "postinstall": "npx playwright install chromium chromium-headless-shell"
   },
   "dependencies": {
     "playwright": "^1.47.0"
