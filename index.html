@@ -588,9 +588,15 @@ function runAutoSearch() {
     if (!res.ok) return res.json().then(function (e) { throw new Error(e.error || ('HTTP ' + res.status)); });
     return res.json();
   }).then(function (data) {
-    var merge = mergeListings(data.listings || []);
-    var summary = (data.listings || []).length + ' results — ' + summariseSources(data.sources || []) +
+    var fetched = data.listings || [];
+    var merge = mergeListings(fetched);
+    var passing = fetched.filter(function (l) { return matchesFilters(l, S.filters); }).length;
+    var summary = fetched.length + ' results — ' + summariseSources(data.sources || []) +
       '. ' + merge.added + ' new, ' + merge.updated + ' updated.';
+    if (fetched.length && passing < fetched.length) {
+      summary += ' Only ' + passing + ' of those show below — the rest are hidden by "Accident-free only" ' +
+        'or required features, since automated results can\'t confirm either (see note below).';
+    }
     S.searchStatus = summary;
     S.searchNotes = data.notes || [];
     S.isSearching = false;
@@ -1170,8 +1176,7 @@ function viewFilters() {
         onclick: runAutoSearch,
         disabled: S.isSearching,
         text: S.isSearching ? 'Searching…' : 'Search'
-      }),
-      el('button.btn.btn-sm', { onclick: openAdd, text: '+ Paste a listing' })
+      })
     ]),
 
     S.searchStatus ? el('div.note', { id: 'results-top', style: 'margin-top:10px', text: S.searchStatus }) : null,
