@@ -305,6 +305,25 @@ function blankForm() {
     engineSize:'', horsepower:'', transmission:'Automatic', fuelType:'Petrol', features:[],
     sourceSite:'Autovit.ro', url:'', country:'Romania', accidentStatus:'accident-free' };
 }
+function seedListings() {
+  return [
+    { id:'s1', title:'VW Tiguan Life 2.0 TDI DSG', brand:'Volkswagen', model:'Tiguan', trim:'Life',
+      year:2023, price:18500, mileage:22000, engineSize:1968, horsepower:150, transmission:'Automatic',
+      fuelType:'Diesel', features:['rearCamera','parkingSensors','cruiseControl','carplay'],
+      sourceSite:'AutoScout24.de', url:'https://www.autoscout24.de/', country:'Germany',
+      shortlisted:true, accidentStatus:'accident-free', accidentFree:true, addedAt:new Date().toISOString() },
+    { id:'s2', title:'Škoda Kodiaq Style 2.0 TSI DSG', brand:'Škoda', model:'Kodiaq', trim:'Style',
+      year:2024, price:19800, mileage:9000, engineSize:1984, horsepower:190, transmission:'Automatic',
+      fuelType:'Petrol', features:['rearCamera','parkingSensors','cruiseControl','heatedSeats','navigation','carplay'],
+      sourceSite:'mobile.de', url:'https://www.mobile.de/', country:'Germany',
+      shortlisted:false, accidentStatus:'accident-free', accidentFree:true, addedAt:new Date().toISOString() },
+    { id:'s3', title:'Kia Sportage GT-Line 1.6 T-GDI', brand:'Kia', model:'Sportage', trim:'GT-Line',
+      year:2023, price:16900, mileage:15000, engineSize:1598, horsepower:150, transmission:'Automatic',
+      fuelType:'Petrol', features:['rearCamera','cruiseControl','heatedSeats','carplay'],
+      sourceSite:'Autovit.ro', url:'https://www.autovit.ro/', country:'Romania',
+      shortlisted:false, accidentStatus:'repaired damage', accidentFree:false, addedAt:new Date().toISOString() }
+  ];
+}
 
 var S = {
   listings: [],
@@ -361,6 +380,11 @@ function load() {
       c.accidentFree = l.accidentFree === true;
       return c;
     });
+  } else if (!saved) {
+    // First visit, nothing in localStorage yet — seed a few example listings
+    // so the table/recommendations/chart aren't empty on first load.
+    S.listings = seedListings();
+    persistListings();
   }
   var prefs = readJSON(LS_PREFS);
   if (prefs) {
