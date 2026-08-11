@@ -413,11 +413,17 @@ function matchesFilters(l, filters) {
   if (f.engineMax !== '' && f.engineMax != null && l.engineSize > Number(f.engineMax)) return false;
   if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
   if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
-  if (f.features.length && !f.features.every(function (k) {
+  // Portal search-result pages don't expose equipment or accident history —
+  // only the listing's own page does — so automated results always come in
+  // with accidentStatus:'unknown' and features:[]. Treat 'unknown' as "not
+  // yet checked" rather than "fails the filter", or every automated result
+  // would silently vanish from the table. Known accident damage still excludes.
+  var unverified = l.accidentStatus === 'unknown';
+  if (f.features.length && !unverified && !f.features.every(function (k) {
     return (l.features || []).indexOf(k) !== -1; })) return false;
   if (f.country !== 'both' && l.country !== f.country) return false;
   if ((f.sources || []).length && f.sources.indexOf(l.sourceSite) === -1) return false;
-  if (f.accidentFree && l.accidentFree !== true) return false;
+  if (f.accidentFree && l.accidentStatus === 'repaired damage') return false;
   if (!filters && S.shortlistOnly && !l.shortlisted) return false;
   return true;
 }
@@ -1199,8 +1205,9 @@ function viewLinks() {
     el('div.card-h', { text: 'Open these searches' }),
     el('div.tiny', {
       style: 'margin:4px 0 12px',
-      text: 'Each link opens the portal with your price, year, power and gearbox already applied. ' +
-            'Found a good one? Copy the listing text and tap "Add listing" to pull it in here.'
+      text: 'Autovit.ro and AutoScout24.ro/.de are already pulled into the table below automatically. ' +
+            'These links cover the rest — mobile.de (bot-protected), OLX.ro and Carvago — with your ' +
+            'price, year, power and gearbox already applied.'
     }),
     el('div.links', null, urls.map(function (u) {
       return el('a.link', { href: u.url, target: '_blank', rel: 'noopener noreferrer' }, [
@@ -1484,11 +1491,9 @@ function viewResults() {
       el('div', {
         style: 'font-size:13px;line-height:1.6;max-width:520px;margin:0 auto 16px',
         text: S.listings.length
-          ? 'Loosen a filter above, or add more listings.'
-          : 'Set your criteria above and press Search — that opens each portal with your filters applied. ' +
-            'When you find a car worth keeping, copy its text and add it here.'
-      }),
-      el('button.btn.btn-primary', { onclick: openAdd, text: '+ Add listing' })
+          ? 'Loosen a filter above to see them.'
+          : 'Set your criteria above and press Search to pull in matching listings.'
+      })
     ]));
   } else if (isMobile()) {
     list.forEach(function (l) { wrap.appendChild(viewCard(l)); });
@@ -1731,10 +1736,6 @@ function render() {
   main.appendChild(viewResults());
   shell.appendChild(main);
   root.appendChild(shell);
-
-  root.appendChild(el('button.fab', {
-    onclick: openAdd, 'aria-label': 'Add a listing'
-  }, ['+ Add listing']));
 
   if (S.isAddOpen) root.appendChild(viewAddSheet());
   else if (S.isCompareOpen) root.appendChild(viewCompareSheet());
