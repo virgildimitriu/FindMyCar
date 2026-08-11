@@ -273,12 +273,13 @@ var FEATURES = [
   { key:'parkAssist',     label:'Automatic parking assist' }
 ];
 
-var SITES = ['Autovit.ro','AutoScout24.ro','AutoScout24.de','mobile.de','OLX.ro','Carvago'];
+var SITES = ['Autovit.ro','AutoScout24.ro','AutoScout24.de','mobile.de','OLX.ro','publi24.ro','OpenLane.eu','Carvago'];
 var GERMAN_SITES = { 'AutoScout24.de':1, 'mobile.de':1 };
 
 /* Sites the backend can query automatically. The rest (OLX.ro, Carvago) stay
    deep-link-only — no adapter for them yet. */
-var AUTO_SITES = { 'Autovit.ro':1, 'AutoScout24.ro':1, 'AutoScout24.de':1, 'mobile.de':1 };
+var AUTO_SITES = { 'Autovit.ro':1, 'AutoScout24.ro':1, 'AutoScout24.de':1, 'mobile.de':1,
+  'publi24.ro':1, 'OLX.ro':1, 'OpenLane.eu':1 };
 var API_BASE = (typeof window !== 'undefined' && window.FINDMYCAR_API_BASE) ||
   'https://findmycar-search-api.onrender.com';
 
@@ -527,6 +528,13 @@ function searchUrls() {
         if (f.yearMin)  op.push('search%5Bfilter_float_year%3Afrom%5D=' + f.yearMin);
         if (op.length) u += '?' + op.join('&');
 
+      } else if (site === 'publi24.ro') {
+        var pubSlug = b === 'Volkswagen' ? 'vw' : s;
+        u = 'https://www.publi24.ro/anunturi/auto-moto/masini-second-hand/' + (pubSlug ? pubSlug + '/' : '');
+
+      } else if (site === 'OpenLane.eu') {
+        u = 'https://www.openlane.eu/en/findcar' + (b ? '?makesModels=' + encodeURIComponent(b) : '');
+
       } else if (site === 'Carvago') {
         u = 'https://carvago.com/cars' + (s ? '?make=' + s : '');
       }
@@ -651,6 +659,8 @@ function parsePaste() {
   else if (host.indexOf('autoscout24.de') > -1) f.sourceSite = 'AutoScout24.de';
   else if (host.indexOf('mobile.de') > -1) f.sourceSite = 'mobile.de';
   else if (host.indexOf('olx.ro') > -1) f.sourceSite = 'OLX.ro';
+  else if (host.indexOf('publi24') > -1) f.sourceSite = 'publi24.ro';
+  else if (host.indexOf('openlane') > -1) f.sourceSite = 'OpenLane.eu';
   else if (host.indexOf('carvago') > -1) f.sourceSite = 'Carvago';
   f.country = GERMAN_SITES[f.sourceSite] ? 'Germany' : 'Romania';
 
@@ -688,11 +698,17 @@ function parsePaste() {
   else if (/diesel|tdi|crdi|dci|hdi|motorina|motorină/.test(t)) f.fuelType = 'Diesel';
   else if (/benzin|petrol|tsi|tfsi|gdi/.test(t)) f.fuelType = 'Petrol';
 
-  var brand = BRANDS.find(function (b) {
-    return t.indexOf(b.toLowerCase()) > -1 ||
-      (b === 'Volkswagen' && /\bvw\b/.test(t)) ||
-      (b === 'Škoda' && /skoda/.test(t)) ||
-      (b === 'Mercedes-Benz' && /mercedes/.test(t));
+  // Picks whichever brand appears EARLIEST in the pasted text (usually the
+  // title, since that's first), not the first brand in BRANDS array order —
+  // otherwise a BMW listing whose description happens to mention "Audi"
+  // later (a dealer's other stock, a comparison) gets mistagged as Audi.
+  var brand = null, brandIdx = Infinity;
+  BRANDS.forEach(function (b) {
+    var idx = t.indexOf(b.toLowerCase());
+    if (idx === -1 && b === 'Volkswagen') { var m1 = /\bvw\b/.exec(t); idx = m1 ? m1.index : -1; }
+    if (idx === -1 && b === 'Škoda') { var m2 = /skoda/.exec(t); idx = m2 ? m2.index : -1; }
+    if (idx === -1 && b === 'Mercedes-Benz') { var m3 = /mercedes/.exec(t); idx = m3 ? m3.index : -1; }
+    if (idx > -1 && idx < brandIdx) { brandIdx = idx; brand = b; }
   });
   if (brand) f.brand = brand;
 

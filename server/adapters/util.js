@@ -105,6 +105,68 @@ function modelMatches(query, listing) {
   return hay.indexOf(nq) > -1;
 }
 
+/* Generic-classifieds sites (publi24.ro, OLX.ro) don't expose brand/mileage/
+   horsepower/accident-history as separate fields — only free title+description
+   text, same shape as a pasted listing. Mirrors the frontend's paste parser
+   (index.html parsePaste()) so both sides read text the same way. */
+var BRANDS = ['Audi', 'BMW', 'Citroën', 'Cupra', 'Dacia', 'Fiat', 'Ford', 'Honda', 'Hyundai', 'Kia',
+  'Mazda', 'Mercedes-Benz', 'Nissan', 'Opel', 'Peugeot', 'Renault', 'Seat', 'Škoda', 'Suzuki',
+  'Toyota', 'Volkswagen', 'Volvo'];
+
+var NUM_PATTERN = '(\\d{1,3}(?:[.,\\s]\\d{3})+|\\d{4,7}|\\d{1,3})';
+function extractMileage(text) {
+  var m = String(text || '').toLowerCase().match(new RegExp(NUM_PATTERN + '\\s*(?:km|kilometri|kilometer)'));
+  if (!m) return 0;
+  var v = parseInt(m[1].replace(/[.,\s]/g, ''), 10);
+  return (v && v < 900000) ? v : 0;
+}
+function extractHorsepower(text) {
+  var t = String(text || '').toLowerCase();
+  var m = t.match(/(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
+  if (m) return parseInt(m[1], 10);
+  var kw = t.match(/(\d{2,3})\s*kw\b/);
+  if (kw) return Math.round(parseInt(kw[1], 10) * 1.36);
+  return 0;
+}
+function extractEngineSize(text) {
+  var t = String(text || '').toLowerCase();
+  var m = t.match(new RegExp(NUM_PATTERN + '\\s*(?:cm3|cm³|ccm|cc\\b)'));
+  if (m) {
+    var v = parseInt(m[1].replace(/[.,\s]/g, ''), 10);
+    if (v > 600 && v < 8000) return v;
+  }
+  var litres = t.match(/\b([123][.,]\d)\s*(?:l\b|tdi|tsi|tfsi|dci|crdi|hdi)/);
+  if (litres) return Math.round(parseFloat(litres[1].replace(',', '.')) * 1000);
+  return 0;
+}
+function detectAccidentStatus(text) {
+  var t = String(text || '').toLowerCase();
+  if (/f[aă]r[aă] accident|unfallfrei|accident.free|neaccidentat|nu a fost accidentat/.test(t)) return 'accident-free';
+  if (/accidentat|unfallschaden|repaired damage|daune reparate/.test(t)) return 'repaired damage';
+  return 'unknown';
+}
+// Picks the brand that appears EARLIEST in the text, not the first one in
+// BRANDS array order — a plain .find() would tag a BMW listing as "Audi" the
+// moment "Audi" happens to appear anywhere later in a free-text description
+// (a dealer's other stock, a comparison, etc). Title is checked first and
+// wins over the description if both mention a brand.
+function earliestBrand(t) {
+  var best = null, bestIdx = Infinity;
+  BRANDS.forEach(function (b) {
+    var idx = t.indexOf(b.toLowerCase());
+    if (idx === -1 && b === 'Volkswagen') { var m1 = /\bvw\b/.exec(t); idx = m1 ? m1.index : -1; }
+    if (idx === -1 && b === 'Škoda') { var m2 = /skoda/.exec(t); idx = m2 ? m2.index : -1; }
+    if (idx === -1 && b === 'Mercedes-Benz') { var m3 = /mercedes/.exec(t); idx = m3 ? m3.index : -1; }
+    if (idx > -1 && idx < bestIdx) { bestIdx = idx; best = b; }
+  });
+  return best;
+}
+function detectBrand(text, title) {
+  var t = String(title || '').toLowerCase();
+  var full = String(text || '').toLowerCase();
+  return earliestBrand(t) || earliestBrand(full) || '';
+}
+
 module.exports = {
   RON_PER_EUR: RON_PER_EUR,
   USER_AGENT: USER_AGENT,
@@ -117,5 +179,11 @@ module.exports = {
   digits: digits,
   normalizeModelText: normalizeModelText,
   modelBase: modelBase,
-  modelMatches: modelMatches
+  modelMatches: modelMatches,
+  BRANDS: BRANDS,
+  extractMileage: extractMileage,
+  extractHorsepower: extractHorsepower,
+  extractEngineSize: extractEngineSize,
+  detectAccidentStatus: detectAccidentStatus,
+  detectBrand: detectBrand
 };
