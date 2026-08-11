@@ -12,7 +12,8 @@ function buildUrl(host, filters, brand) {
   if (filters.transmission === 'Manual') p.push('gear=M');
   p.push('sort=price', 'desc=0');
   var slug = brand ? util.brandSlug(brand) : '';
-  var path = slug ? '/lst/' + slug + (filters.model ? '/' + encodeURIComponent(filters.model.toLowerCase()) : '') : '/lst';
+  var modelBase = filters.model ? util.modelBase(filters.model) : '';
+  var path = slug ? '/lst/' + slug + (modelBase ? '/' + encodeURIComponent(modelBase) : '') : '/lst';
   return 'https://' + host + path + '?' + p.join('&');
 }
 

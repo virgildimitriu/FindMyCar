@@ -13,7 +13,8 @@ function buildUrl(filters, brand) {
   if (filters.mileageMax) p.push('search%5Bfilter_float_mileage%3Ato%5D=' + encodeURIComponent(filters.mileageMax));
   if (filters.transmission === 'Automatic') p.push('search%5Bfilter_enum_gearbox%5D=automatic');
   if (filters.transmission === 'Manual') p.push('search%5Bfilter_enum_gearbox%5D=manual');
-  if (filters.model) p.push('search%5Bfilter_enum_model%5D=' + encodeURIComponent(filters.model));
+  var modelBase = filters.model ? util.modelBase(filters.model) : '';
+  if (modelBase) p.push('search%5Bfilter_enum_model%5D=' + encodeURIComponent(modelBase));
   var slug = brand ? util.brandSlug(brand) : '';
   return 'https://www.autovit.ro/autoturisme' + (slug ? '/' + slug : '') +
     (p.length ? '?' + p.join('&') : '');

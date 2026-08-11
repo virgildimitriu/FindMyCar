@@ -2,6 +2,7 @@
 var autovit = require('./adapters/autovit');
 var as24 = require('./adapters/autoscout24');
 var mobileDe = require('./adapters/mobileDe');
+var util = require('./adapters/util');
 
 var ADAPTERS = {
   'Autovit.ro': autovit,
@@ -63,7 +64,7 @@ async function runSite(adapter, siteName, filters, brands, timeoutMs) {
 
 function applyFilters(listings, filters) {
   return listings.filter(function (l) {
-    if (filters.model && l.model && l.model.toLowerCase().indexOf(String(filters.model).toLowerCase()) === -1) return false;
+    if (filters.model && !util.modelMatches(filters.model, l)) return false;
     if (filters.priceMin && l.price < Number(filters.priceMin)) return false;
     if (filters.priceMax && l.price > Number(filters.priceMax)) return false;
     if (filters.yearMin && l.year && l.year < Number(filters.yearMin)) return false;
@@ -98,9 +99,9 @@ async function runSearch(filters) {
 
   var notes = [];
   if (filters.accidentFree) {
-    notes.push('"Accident-free only" is on. Portal search pages never expose accident history, so every ' +
-      'automated result comes back unverified and the app hides it under this filter rather than guess. ' +
-      'Turn the filter off to see them, then open a listing yourself to check.');
+    notes.push('"Accident-free only" only excludes listings confirmed to have accident damage. Portal ' +
+      'search pages never expose accident history, so automated results still show up but are marked ' +
+      '"Not confirmed accident-free" in the History column — check the listing yourself before trusting it.');
   }
   if (filters.features && filters.features.length) {
     notes.push('Required features aren\'t shown on search-result pages either, so automated results have ' +

@@ -74,6 +74,37 @@ function digits(text) {
   return parseInt(m.join(''), 10) || 0;
 }
 
+/* Generation numbers (Golf 8 / Golf VIII / Golf Mk8) don't share one spelling
+   across sites, and a portal's own "model" field usually drops the
+   generation entirely. Normalise roman numerals and "mk" prefixes to plain
+   digits so free-text model queries can match listing text either way. */
+var ROMAN_TO_ARABIC = {
+  viii: '8', vii: '7', vi: '6', iv: '4', iii: '3', ii: '2',
+  xii: '12', xi: '11', ix: '9', x: '10', v: '5', i: '1'
+};
+function normalizeModelText(s) {
+  return String(s || '').toLowerCase()
+    .replace(/\bmk\.?\s*/g, '')
+    .replace(/([a-z])(\d)/g, '$1 $2').replace(/(\d)([a-z])/g, '$1 $2')
+    .replace(/\b(viii|vii|vi|iv|iii|ii|xii|xi|ix|x|v|i)\b/g, function (m) { return ROMAN_TO_ARABIC[m]; })
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+// Strip a trailing generation token for use in a portal's OWN model filter/path
+// (which expects its controlled vocabulary, e.g. "golf" — sending it "golf 8"
+// verbatim would likely break that query). The generation is matched
+// separately, after fetching, via modelMatches().
+function modelBase(s) {
+  return normalizeModelText(s).replace(/\s+\d+$/, '').trim();
+}
+function modelMatches(query, listing) {
+  if (!query) return true;
+  var nq = normalizeModelText(query);
+  if (!nq) return true;
+  var hay = normalizeModelText([listing.model, listing.trim, listing.title].filter(Boolean).join(' '));
+  return hay.indexOf(nq) > -1;
+}
+
 module.exports = {
   RON_PER_EUR: RON_PER_EUR,
   USER_AGENT: USER_AGENT,
@@ -83,5 +114,8 @@ module.exports = {
   toEurPrice: toEurPrice,
   detectTransmission: detectTransmission,
   detectFuel: detectFuel,
-  digits: digits
+  digits: digits,
+  normalizeModelText: normalizeModelText,
+  modelBase: modelBase,
+  modelMatches: modelMatches
 };

@@ -387,10 +387,36 @@ function load() {
    Domain logic
    ===================================================================== */
 
+/* Generation numbers (Golf 8 / Golf VIII / Golf Mk8 / Golf8) don't share one
+   spelling across sites, and portals' own "model" field usually drops the
+   generation entirely (e.g. Autovit's model is just "golf"). Normalise roman
+   numerals and "mk" prefixes to plain digits, strip punctuation, and search
+   across model + trim + title combined so a generation mentioned only in the
+   listing's title still matches. */
+var ROMAN_TO_ARABIC = {
+  viii: '8', vii: '7', vi: '6', iv: '4', iii: '3', ii: '2',
+  xii: '12', xi: '11', ix: '9', x: '10', v: '5', i: '1'
+};
+function normalizeModelText(s) {
+  return String(s || '').toLowerCase()
+    .replace(/\bmk\.?\s*/g, '')
+    .replace(/([a-z])(\d)/g, '$1 $2').replace(/(\d)([a-z])/g, '$1 $2')
+    .replace(/\b(viii|vii|vi|iv|iii|ii|xii|xi|ix|x|v|i)\b/g, function (m) { return ROMAN_TO_ARABIC[m]; })
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+function modelMatches(query, l) {
+  if (!query) return true;
+  var nq = normalizeModelText(query);
+  if (!nq) return true;
+  var hay = normalizeModelText([l.model, l.trim, l.title].filter(Boolean).join(' '));
+  return hay.indexOf(nq) > -1;
+}
+
 function matchesFilters(l, filters) {
   var f = filters || S.filters;
   if (f.brands.length && f.brands.indexOf(l.brand) === -1) return false;
-  if (f.model && (l.model || '').toLowerCase().indexOf(f.model.toLowerCase()) === -1) return false;
+  if (f.model && !modelMatches(f.model, l)) return false;
   if (f.priceMin !== '' && f.priceMin != null && l.price < Number(f.priceMin)) return false;
   if (f.priceMax !== '' && f.priceMax != null && l.price > Number(f.priceMax)) return false;
   if (f.yearMin !== '' && f.yearMin != null && l.year < Number(f.yearMin)) return false;
@@ -398,20 +424,15 @@ function matchesFilters(l, filters) {
   if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
   if (f.mileageMax !== '' && f.mileageMax != null && l.mileage > Number(f.mileageMax)) return false;
   if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
-  // Strict on purpose: "Accident-free only" must mean confirmed accident-free,
-  // not "we don't know". Portal search-result pages don't expose accident
-  // history or equipment — only the listing's own page does — so automated
-  // results come in as accidentStatus:'unknown' and features:[]. An earlier
-  // version of this let 'unknown' pass both checks so automated results
-  // wouldn't vanish from the table, but that meant a car with real, undisclosed
-  // accident damage could show up under "Accident-free only". Never worth it —
-  // filters here must only pass what's actually verified; unfiltered automated
-  // results are still visible by turning the filter off.
   if (f.features.length && !f.features.every(function (k) {
     return (l.features || []).indexOf(k) !== -1; })) return false;
   if (f.country !== 'both' && l.country !== f.country) return false;
   if ((f.sources || []).length && f.sources.indexOf(l.sourceSite) === -1) return false;
-  if (f.accidentFree && l.accidentStatus !== 'accident-free') return false;
+  // "Accident-free only" excludes confirmed damage, but doesn't hide unverified
+  // results (portal search pages never expose accident history) — those stay
+  // visible, clearly labelled "Not confirmed accident-free" in the History
+  // column/card instead, so nothing is silently trusted either way.
+  if (f.accidentFree && l.accidentStatus === 'repaired damage') return false;
   if (!filters && S.shortlistOnly && !l.shortlisted) return false;
   return true;
 }
@@ -594,8 +615,9 @@ function runAutoSearch() {
     var summary = fetched.length + ' results — ' + summariseSources(data.sources || []) +
       '. ' + merge.added + ' new, ' + merge.updated + ' updated.';
     if (fetched.length && passing < fetched.length) {
-      summary += ' Only ' + passing + ' of those show below — the rest are hidden by "Accident-free only" ' +
-        'or required features, since automated results can\'t confirm either (see note below).';
+      summary += ' Only ' + passing + ' of those show below — the rest are missing a required feature ' +
+        'your filters ask for (automated results don\'t include equipment data; see note below). ' +
+        'Unconfirmed accident history no longer hides a result, but check the History column before trusting one.';
     }
     S.searchStatus = summary;
     S.searchNotes = data.notes || [];
@@ -828,7 +850,10 @@ function featuresText(keys) {
   return out.length ? out.join(', ') : '—';
 }
 function historyText(l) {
-  var base = l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown');
+  var base;
+  if (l.accidentFree === true) base = 'Accident-free';
+  else if (l.accidentStatus === 'repaired damage') base = 'Accident damage reported';
+  else base = 'Not confirmed accident-free';
   var risks = l.riskNotes || [];
   return risks.length ? base + ' · ⚠ ' + risks.join(', ') : base;
 }
