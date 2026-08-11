@@ -59,10 +59,16 @@ function detectTransmission(text) {
   return null;
 }
 
+// Distinguishes a plug-in hybrid (needs external charging from an outlet)
+// from a regular/self-charging hybrid (charges itself via the engine and
+// regenerative braking while driving) — both would otherwise just say
+// "hybrid". Covers common textual markers plus a few manufacturer badges
+// that specifically mean plug-in (VW/Audi "GTE"/"TFSI e", Volvo "Recharge").
 function detectFuel(text) {
   var t = String(text || '').toLowerCase();
+  var isPlugIn = /plug-?in|phev|priz[aă]|încărcare externă|incarcare externa|rechargeable|\bgte\b|tfsi ?e|\brecharge\b/.test(t);
   if (/electric|elektro/.test(t) && !/hybrid|hibrid/.test(t)) return 'Electric';
-  if (/hybrid|hibrid/.test(t)) return 'Hybrid';
+  if (/hybrid|hibrid/.test(t)) return isPlugIn ? 'Plug-in Hybrid' : 'Hybrid';
   if (/diesel|motorina|motorină/.test(t)) return 'Diesel';
   if (/benzina|benzină|petrol|benzin/.test(t)) return 'Petrol';
   return 'Petrol';

@@ -93,6 +93,7 @@ function applyFilters(listings, filters) {
     if (filters.hpMin && l.horsepower && l.horsepower < Number(filters.hpMin)) return false;
     if (filters.mileageMax && l.mileage && l.mileage > Number(filters.mileageMax)) return false;
     if (filters.transmission && filters.transmission !== 'Either' && l.transmission !== filters.transmission) return false;
+    if (filters.fuelType && filters.fuelType !== 'Either' && l.fuelType !== filters.fuelType) return false;
     if (filters.country && filters.country !== 'both' && l.country !== filters.country) return false;
     // accidentFree and required `features` are deliberately NOT enforced here:
     // portal search-result pages don't expose either, so every automated

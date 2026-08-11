@@ -293,7 +293,7 @@ var LS_LISTINGS = 'findmycar_listings_v1';
 
 function blankFilters() {
   return { brands:[], model:'', priceMin:'', priceMax:'', yearMin:'', engineMax:'',
-    hpMin:'', mileageMax:'', transmission:'Either', features:[], country:'both',
+    hpMin:'', mileageMax:'', transmission:'Either', fuelType:'Either', features:[], country:'both',
     accidentFree:false, sources:[] };
 }
 function defaultFilters() {
@@ -302,7 +302,7 @@ function defaultFilters() {
   // results on first use — a confusing "0 matches" with no obvious cause.
   return { brands:['Volkswagen','Škoda','Kia'], model:'', priceMin:14000, priceMax:20000,
     yearMin:2023, engineMax:2000, hpMin:150, mileageMax:'', transmission:'Automatic',
-    features:[], country:'both', accidentFree:true, sources:[] };
+    fuelType:'Either', features:[], country:'both', accidentFree:true, sources:[] };
 }
 function blankForm() {
   return { title:'', brand:'Volkswagen', model:'', trim:'', year:'', price:'', mileage:'',
@@ -429,6 +429,7 @@ function matchesFilters(l, filters) {
   if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
   if (f.mileageMax !== '' && f.mileageMax != null && l.mileage > Number(f.mileageMax)) return false;
   if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
+  if (f.fuelType && f.fuelType !== 'Either' && l.fuelType !== f.fuelType) return false;
   if (f.features.length && !f.features.every(function (k) {
     return (l.features || []).indexOf(k) !== -1; })) return false;
   if (f.country !== 'both' && l.country !== f.country) return false;
@@ -702,8 +703,13 @@ function parsePaste() {
   if (/\b(automat|automatic|automatik|dsg|s.tronic|tiptronic|dct|cutie automat)/.test(t)) f.transmission = 'Automatic';
   else if (/\b(manual|manuala|manuală|schaltgetriebe)/.test(t)) f.transmission = 'Manual';
 
+  // Plug-in (needs external charging) vs regular self-charging hybrid —
+  // checked before the generic hybrid match, using the same badge markers
+  // (GTE, TFSI e, Recharge, PHEV) the backend adapters use.
+  var isPlugIn = /plug-?in|phev|priz[aă]|încărcare externă|incarcare externa|rechargeable|\bgte\b|tfsi ?e|\brecharge\b/.test(t);
   if (/\b(electric|elektro|ev)\b/.test(t) && !/hybrid|hibrid/.test(t)) f.fuelType = 'Electric';
-  else if (/hybrid|hibrid/.test(t)) f.fuelType = 'Hybrid';
+  else if (/hybrid|hibrid/.test(t)) f.fuelType = isPlugIn ? 'Plug-in Hybrid' : 'Hybrid';
+  else if (isPlugIn) f.fuelType = 'Plug-in Hybrid';
   else if (/diesel|tdi|crdi|dci|hdi|motorina|motorină/.test(t)) f.fuelType = 'Diesel';
   else if (/benzin|petrol|tsi|tfsi|gdi/.test(t)) f.fuelType = 'Petrol';
 
@@ -1148,6 +1154,14 @@ function viewFilters() {
           onchange: function (e) { setFilter('transmission', e.target.value); render(); }
         }, ['Automatic', 'Manual', 'Either'].map(function (o) {
           return el('option', { value: o, text: o, selected: f.transmission === o });
+        }))
+      ]),
+      el('div', null, [
+        el('label.field', { text: 'Fuel' }),
+        el('select', {
+          onchange: function (e) { setFilter('fuelType', e.target.value); render(); }
+        }, ['Either', 'Petrol', 'Diesel', 'Hybrid', 'Plug-in Hybrid', 'Electric'].map(function (o) {
+          return el('option', { value: o, text: o, selected: (f.fuelType || 'Either') === o });
         }))
       ])
     ]),
@@ -1628,7 +1642,7 @@ function viewAddSheet() {
         txt('Engine (cm³)', 'engineSize', { num: true }),
         txt('Horsepower', 'horsepower', { num: true }),
         sel('Transmission', 'transmission', ['Automatic', 'Manual']),
-        sel('Fuel', 'fuelType', ['Petrol', 'Diesel', 'Hybrid', 'Electric']),
+        sel('Fuel', 'fuelType', ['Petrol', 'Diesel', 'Hybrid', 'Plug-in Hybrid', 'Electric']),
         sel('Source', 'sourceSite', SITES),
         sel('Market', 'country', ['Romania', 'Germany']),
         sel('Accident history', 'accidentStatus', ['accident-free', 'repaired damage', 'unknown'])

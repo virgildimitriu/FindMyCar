@@ -77,6 +77,9 @@ function normalise(node) {
 function capitalise(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function mapFuel(v) {
   var t = String(v || '').toLowerCase();
+  // Autovit's own taxonomy has a distinct "plugin-hybrid" enum value
+  // separate from plain "hybrid" — no text-guessing needed here.
+  if (t.indexOf('plugin-hybrid') > -1 || t.indexOf('plug-in') > -1) return 'Plug-in Hybrid';
   if (t.indexOf('petrol') > -1 || t.indexOf('benz') > -1) return 'Petrol';
   if (t.indexOf('diesel') > -1) return 'Diesel';
   if (t.indexOf('hybrid') > -1) return 'Hybrid';

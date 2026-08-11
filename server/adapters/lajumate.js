@@ -40,7 +40,7 @@ function normalise(ad) {
     engineSize: parseInt(fieldValue(fields, 'engine_size'), 10) || util.extractEngineSize(text),
     horsepower: util.extractHorsepower(text),
     transmission: util.detectTransmission(text) || 'Automatic',
-    fuelType: util.detectFuel(fieldValue(fields, 'fuel') || text),
+    fuelType: util.detectFuel((fieldValue(fields, 'fuel') || '') + ' ' + text),
     features: [],
     accidentStatus: accidentStatus,
     accidentFree: accidentStatus === 'accident-free',

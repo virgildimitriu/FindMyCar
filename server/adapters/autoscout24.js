@@ -52,7 +52,10 @@ function normalise(l, siteName, host) {
     engineSize: util.digits(v.engineDisplacementInCCM),
     horsepower: extractHorsepower(l.vehicleDetails),
     transmission: util.detectTransmission(v.transmission) || 'Automatic',
-    fuelType: util.detectFuel(v.fuel),
+    // title carries the variant/trim badge (GTE, 330e, "Recharge", etc.),
+    // which is often the only signal that a "hybrid" is actually plug-in —
+    // v.fuel alone is just a short tag like "Elektro/Benzin".
+    fuelType: util.detectFuel(title + ' ' + (v.fuel || '')),
     features: [],
     // AS24's `isCurrentlyDamaged` flag means "not currently reported damaged",
     // not "verified accident-free history" — the spec requires we never assume

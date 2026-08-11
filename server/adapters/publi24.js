@@ -61,7 +61,7 @@ function normalise(item) {
     engineSize: engineSize,
     horsepower: util.extractHorsepower(text),
     transmission: util.detectTransmission(text) || 'Automatic',
-    fuelType: util.detectFuel(item.fuelType || text),
+    fuelType: util.detectFuel((item.fuelType || '') + ' ' + text),
     features: [],
     accidentStatus: accidentStatus,
     accidentFree: accidentStatus === 'accident-free',
