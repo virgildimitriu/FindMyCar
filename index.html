@@ -1188,7 +1188,7 @@ function viewLinks() {
   if (!urls.length) {
     return el('section.card', { id: 'links' }, [
       el('div.card-h', { text: 'Open these searches' }),
-      el('div.note', { text: 'No sites match the market you selected. Widen "Market" or "Where to search".' })
+      el('div.note', { text: 'No sites selected. Widen "Where to search".' })
     ]);
   }
   return el('section.card', { id: 'links' }, [
