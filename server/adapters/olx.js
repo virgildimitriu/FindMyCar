@@ -15,6 +15,42 @@ function buildUrl(filters, brand) {
   return 'https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/' + (slug ? slug + '/' : '');
 }
 
+// OLX returned HTTP 403 to util.fetchHtml's honest custom User-Agent (which
+// works fine against Autovit.ro, the same corporate group, so it's specific
+// to OLX's own front door). Using realistic browser headers here only —
+// doesn't touch the other adapters' identifying UA.
+async function fetchHtmlBrowserLike(url, timeoutMs) {
+  var controller = new AbortController();
+  var timer = setTimeout(function () { controller.abort(); }, timeoutMs || 10000);
+  try {
+    var res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+          '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
+        'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'Upgrade-Insecure-Requests': '1'
+      }
+    });
+    if (!res.ok) {
+      var err = new Error('HTTP ' + res.status);
+      err.status = res.status;
+      throw err;
+    }
+    return await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function extractCards(html) {
   var starts = [];
   var re = /<div data-cy="l-card"[^>]*\sid="(\d+)"/g;
@@ -104,7 +140,7 @@ function normalise(card) {
 
 async function search(filters, brand, timeoutMs) {
   var url = buildUrl(filters, brand);
-  var html = await util.fetchHtml(url, timeoutMs);
+  var html = await fetchHtmlBrowserLike(url, timeoutMs);
   var cards = extractCards(html);
   if (!cards.length) throw new Error('selector_miss: no l-card blocks found');
   return cards.map(normalise).filter(function (l) { return l && l.url && l.title; });
