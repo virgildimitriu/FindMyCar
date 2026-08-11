@@ -273,13 +273,14 @@ var FEATURES = [
   { key:'parkAssist',     label:'Automatic parking assist' }
 ];
 
-var SITES = ['Autovit.ro','AutoScout24.ro','AutoScout24.de','mobile.de','OLX.ro','publi24.ro','OpenLane.eu','Carvago'];
+var SITES = ['Autovit.ro','AutoScout24.ro','AutoScout24.de','mobile.de','OLX.ro','publi24.ro','lajumate.ro','OpenLane.eu','Carvago'];
 var GERMAN_SITES = { 'AutoScout24.de':1, 'mobile.de':1 };
 
-/* Sites the backend can query automatically. The rest (OLX.ro, Carvago) stay
-   deep-link-only — no adapter for them yet. */
+/* Sites the backend attempts automatically (mobile.de and OLX.ro both
+   report an honest failure status — bot-protected/blocked, see server/
+   search.js comments). OpenLane.eu and Carvago stay deep-link-only. */
 var AUTO_SITES = { 'Autovit.ro':1, 'AutoScout24.ro':1, 'AutoScout24.de':1, 'mobile.de':1,
-  'publi24.ro':1, 'OLX.ro':1 };
+  'publi24.ro':1, 'OLX.ro':1, 'lajumate.ro':1 };
 var API_BASE = (typeof window !== 'undefined' && window.FINDMYCAR_API_BASE) ||
   'https://findmycar-search-api.onrender.com';
 
@@ -535,6 +536,9 @@ function searchUrls() {
         var pubSlug = b === 'Volkswagen' ? 'vw' : s;
         u = 'https://www.publi24.ro/anunturi/auto-moto/masini-second-hand/' + (pubSlug ? pubSlug + '/' : '');
 
+      } else if (site === 'lajumate.ro') {
+        u = 'https://lajumate.ro/anunturi/auto-moto-si-ambarcatiuni/autoturisme' + (s ? '/' + s : '');
+
       } else if (site === 'OpenLane.eu') {
         u = 'https://www.openlane.eu/en/findcar' + (b ? '?makesModels=' + encodeURIComponent(b) : '');
 
@@ -664,6 +668,7 @@ function parsePaste() {
   else if (host.indexOf('mobile.de') > -1) f.sourceSite = 'mobile.de';
   else if (host.indexOf('olx.ro') > -1) f.sourceSite = 'OLX.ro';
   else if (host.indexOf('publi24') > -1) f.sourceSite = 'publi24.ro';
+  else if (host.indexOf('lajumate') > -1) f.sourceSite = 'lajumate.ro';
   else if (host.indexOf('openlane') > -1) f.sourceSite = 'OpenLane.eu';
   else if (host.indexOf('carvago') > -1) f.sourceSite = 'Carvago';
   f.country = GERMAN_SITES[f.sourceSite] ? 'Germany' : 'Romania';

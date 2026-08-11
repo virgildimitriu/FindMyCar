@@ -4,6 +4,7 @@ var as24 = require('./adapters/autoscout24');
 var mobileDe = require('./adapters/mobileDe');
 var publi24 = require('./adapters/publi24');
 var olx = require('./adapters/olx');
+var lajumate = require('./adapters/lajumate');
 var util = require('./adapters/util');
 
 // OpenLane.eu was attempted via a headless browser (Playwright) but dropped:
@@ -27,7 +28,8 @@ var ADAPTERS = {
   'AutoScout24.de': as24.de,
   'mobile.de': mobileDe,
   'publi24.ro': publi24,
-  'OLX.ro': olx
+  'OLX.ro': olx,
+  'lajumate.ro': lajumate
 };
 
 var MAX_BRANDS = 6;
