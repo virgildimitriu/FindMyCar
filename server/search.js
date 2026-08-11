@@ -98,12 +98,13 @@ async function runSearch(filters) {
 
   var notes = [];
   if (filters.accidentFree) {
-    notes.push('"Accident-free only" is on, but portal search pages never expose accident history — ' +
-      'automated results are not filtered on it. Open a listing to verify before trusting it.');
+    notes.push('"Accident-free only" is on. Portal search pages never expose accident history, so every ' +
+      'automated result comes back unverified and the app hides it under this filter rather than guess. ' +
+      'Turn the filter off to see them, then open a listing yourself to check.');
   }
   if (filters.features && filters.features.length) {
-    notes.push('Required features aren\'t shown on search-result pages either, so automated results ' +
-      'aren\'t filtered by equipment — check the listing itself.');
+    notes.push('Required features aren\'t shown on search-result pages either, so automated results have ' +
+      'no equipment data and are hidden by this filter too — check the listing itself.');
   }
 
   return {

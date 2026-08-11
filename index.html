@@ -284,7 +284,6 @@ var API_BASE = (typeof window !== 'undefined' && window.FINDMYCAR_API_BASE) ||
 
 var LS_SEARCHES = 'findmycar_searches_v1';
 var LS_LISTINGS = 'findmycar_listings_v1';
-var LS_PREFS    = 'findmycar_prefs_v1';
 
 /* =====================================================================
    State
@@ -348,9 +347,6 @@ var S = {
   isSearching: false,
   searchStatus: '',
   searchNotes: [],
-  lastSources: [],
-  transportEstimate: 450,
-  rarFees: 800,
   width: window.innerWidth
 };
 
@@ -364,9 +360,6 @@ function writeJSON(key, val) {
 }
 function persistListings() { writeJSON(LS_LISTINGS, S.listings); }
 function persistSearches() { writeJSON(LS_SEARCHES, S.savedSearches); }
-function persistPrefs() {
-  writeJSON(LS_PREFS, { transportEstimate:S.transportEstimate, rarFees:S.rarFees });
-}
 
 function load() {
   var qs = readJSON(LS_SEARCHES);
@@ -387,22 +380,12 @@ function load() {
     S.listings = seedListings();
     persistListings();
   }
-  var prefs = readJSON(LS_PREFS);
-  if (prefs) {
-    if (prefs.transportEstimate != null) S.transportEstimate = prefs.transportEstimate;
-    if (prefs.rarFees != null) S.rarFees = prefs.rarFees;
-  }
   S.railOpen = window.innerWidth >= 860;
 }
 
 /* =====================================================================
    Domain logic
    ===================================================================== */
-
-function landedCost(l) {
-  if (l.country !== 'Germany') return l.price;
-  return l.price + (Number(S.transportEstimate) || 0) + (Number(S.rarFees) || 0);
-}
 
 function matchesFilters(l, filters) {
   var f = filters || S.filters;
@@ -415,27 +398,30 @@ function matchesFilters(l, filters) {
   if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
   if (f.mileageMax !== '' && f.mileageMax != null && l.mileage > Number(f.mileageMax)) return false;
   if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
-  // Portal search-result pages don't expose equipment or accident history —
-  // only the listing's own page does — so automated results always come in
-  // with accidentStatus:'unknown' and features:[]. Treat 'unknown' as "not
-  // yet checked" rather than "fails the filter", or every automated result
-  // would silently vanish from the table. Known accident damage still excludes.
-  var unverified = l.accidentStatus === 'unknown';
-  if (f.features.length && !unverified && !f.features.every(function (k) {
+  // Strict on purpose: "Accident-free only" must mean confirmed accident-free,
+  // not "we don't know". Portal search-result pages don't expose accident
+  // history or equipment — only the listing's own page does — so automated
+  // results come in as accidentStatus:'unknown' and features:[]. An earlier
+  // version of this let 'unknown' pass both checks so automated results
+  // wouldn't vanish from the table, but that meant a car with real, undisclosed
+  // accident damage could show up under "Accident-free only". Never worth it —
+  // filters here must only pass what's actually verified; unfiltered automated
+  // results are still visible by turning the filter off.
+  if (f.features.length && !f.features.every(function (k) {
     return (l.features || []).indexOf(k) !== -1; })) return false;
   if (f.country !== 'both' && l.country !== f.country) return false;
   if ((f.sources || []).length && f.sources.indexOf(l.sourceSite) === -1) return false;
-  if (f.accidentFree && l.accidentStatus === 'repaired damage') return false;
+  if (f.accidentFree && l.accidentStatus !== 'accident-free') return false;
   if (!filters && S.shortlistOnly && !l.shortlisted) return false;
   return true;
 }
 
 function scoreListing(l, ctx) {
   var reasons = [], score = 0, rel;
-  if (ctx.maxLanded > ctx.minLanded) {
-    rel = 1 - (landedCost(l) - ctx.minLanded) / (ctx.maxLanded - ctx.minLanded);
+  if (ctx.maxPrice > ctx.minPrice) {
+    rel = 1 - (l.price - ctx.minPrice) / (ctx.maxPrice - ctx.minPrice);
     score += rel * 40;
-    if (rel > 0.66) reasons.push('lowest landed cost in the set');
+    if (rel > 0.66) reasons.push('lowest price in the set');
   }
   if (ctx.maxMileage > ctx.minMileage) {
     rel = 1 - (l.mileage - ctx.minMileage) / (ctx.maxMileage - ctx.minMileage);
@@ -574,11 +560,6 @@ function summariseSources(sources) {
   }).join(' · ');
 }
 
-function mobileDeUrl() {
-  var u = searchUrls().find(function (x) { return x.site === 'mobile.de'; });
-  return u ? u.url : null;
-}
-
 function runAutoSearch() {
   var sites = requestedAutoSites();
   if (!sites.length) {
@@ -612,7 +593,6 @@ function runAutoSearch() {
       '. ' + merge.added + ' new, ' + merge.updated + ' updated.';
     S.searchStatus = summary;
     S.searchNotes = data.notes || [];
-    S.lastSources = data.sources || [];
     S.isSearching = false;
     render();
   }).catch(function (err) {
@@ -1113,16 +1093,6 @@ function viewFilters() {
         }, ['Automatic', 'Manual', 'Either'].map(function (o) {
           return el('option', { value: o, text: o, selected: f.transmission === o });
         }))
-      ]),
-      el('div', null, [
-        el('label.field', { text: 'Market' }),
-        el('select', {
-          onchange: function (e) { setFilter('country', e.target.value); render(); }
-        }, [
-          el('option', { value: 'both', text: 'Romania & Germany', selected: f.country === 'both' }),
-          el('option', { value: 'Romania', text: 'Romania only', selected: f.country === 'Romania' }),
-          el('option', { value: 'Germany', text: 'Germany only', selected: f.country === 'Germany' })
-        ])
       ])
     ]),
 
@@ -1172,28 +1142,6 @@ function viewFilters() {
       'All sites included'
     ),
 
-    el('div', { style: 'border-top:1px solid var(--line-2);padding-top:14px' }, [
-      el('div.sec-label', { text: 'Landed cost assumptions (imports from Germany)' }),
-      el('div', { style: 'display:flex;gap:14px;flex-wrap:wrap' }, [
-        el('div', null, [
-          el('label.field', { text: 'Transport estimate (€)' }),
-          el('input', {
-            type: 'number', inputmode: 'numeric', value: S.transportEstimate,
-            style: 'width:150px',
-            oninput: function (e) {
-              S.transportEstimate = e.target.value; persistPrefs(); renderResultsOnly();
-            }
-          })
-        ]),
-        el('div', null, [
-          el('label.field', { text: 'Registration / RAR fees (€)' }),
-          el('input', {
-            type: 'number', inputmode: 'numeric', value: S.rarFees, style: 'width:150px',
-            oninput: function (e) { S.rarFees = e.target.value; persistPrefs(); renderResultsOnly(); }
-          })
-        ])
-      ])
-    ])
   ]);
 
   return el('section.card', null, [
@@ -1222,38 +1170,15 @@ function viewFilters() {
         onclick: runAutoSearch,
         disabled: S.isSearching,
         text: S.isSearching ? 'Searching…' : 'Search'
-      })
+      }),
+      el('button.btn.btn-sm', { onclick: openAdd, text: '+ Paste a listing' })
     ]),
 
     S.searchStatus ? el('div.note', { id: 'results-top', style: 'margin-top:10px', text: S.searchStatus }) : null,
     (S.searchNotes && S.searchNotes.length) ? el('div', { style: 'margin-top:6px' },
       S.searchNotes.map(function (n) { return el('div.tiny', { style: 'margin-top:2px', text: n }); })
     ) : null,
-    viewMobileDeCallout(),
-
     S.showFilters ? body : null
-  ]);
-}
-
-function viewMobileDeCallout() {
-  var entry = (S.lastSources || []).find(function (s) { return s.site === 'mobile.de'; });
-  if (!entry || entry.status === 'ok') return null;
-  var url = mobileDeUrl();
-  if (!url) return null;
-  return el('div', {
-    style: 'margin-top:8px;padding:10px 12px;border:1px solid var(--accent-line);' +
-           'background:var(--accent-soft);border-radius:8px;font-size:12.5px;display:flex;' +
-           'align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap'
-  }, [
-    el('span', { text: 'mobile.de blocks automated search — browse it yourself, then paste a listing you like below.' }),
-    el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
-      el('a', {
-        href: url, target: '_blank', rel: 'noopener noreferrer',
-        style: 'color:var(--accent-deep);font-weight:600;text-decoration:none;white-space:nowrap',
-        text: 'Open mobile.de ↗'
-      }),
-      el('button.btn.btn-sm', { onclick: openAdd, text: 'Paste a listing' })
-    ])
   ]);
 }
 
@@ -1288,9 +1213,9 @@ function viewLinks() {
 
 function viewRecommendations(filtered) {
   if (filtered.length < 2) return null;
-  var landeds = filtered.map(landedCost);
   var ctx = {
-    minLanded: Math.min.apply(null, landeds), maxLanded: Math.max.apply(null, landeds),
+    minPrice: Math.min.apply(null, filtered.map(function (l) { return l.price; })),
+    maxPrice: Math.max.apply(null, filtered.map(function (l) { return l.price; })),
     minMileage: Math.min.apply(null, filtered.map(function (l) { return l.mileage; })),
     maxMileage: Math.max.apply(null, filtered.map(function (l) { return l.mileage; })),
     minHp: Math.min.apply(null, filtered.map(function (l) { return l.horsepower; })),
@@ -1308,7 +1233,7 @@ function viewRecommendations(filtered) {
     el('div.card-h', { text: 'Recommendations' }),
     el('div.tiny', {
       style: 'margin:4px 0 12px',
-      text: 'Ranked on landed cost, mileage, power, equipment and year across your filtered results.'
+      text: 'Ranked on price, mileage, power, equipment and year across your filtered results.'
     }),
     el('div.recs', null, ranked.map(function (r, i) {
       return el('div.rec', null, [
@@ -1317,10 +1242,7 @@ function viewRecommendations(filtered) {
           el('span.tiny.mono', { text: r.score + '/100' })
         ]),
         el('div', { style: 'font-size:14px;font-weight:600;line-height:1.3', text: r.l.title }),
-        el('div.mono', { style: 'font-size:13px' }, [
-          eur(r.l.price),
-          el('span.tiny', { text: '  landed ' + eur(landedCost(r.l)) })
-        ]),
+        el('div.mono', { style: 'font-size:13px' }, [ eur(r.l.price) ]),
         el('div', {
           style: 'font-size:12.5px;color:var(--text-2)',
           text: r.reasons.length ? r.reasons.join(' · ') : 'meets all your filters'
@@ -1388,7 +1310,6 @@ function viewChart(filtered) {
 
 function viewCard(l) {
   var sel = S.selectedIds.indexOf(l.id) > -1;
-  var showLanded = l.country === 'Germany';
   return el('article.item' + (sel ? '.on' : ''), null, [
     el('div.top', null, [
       el('div.ttl', { text: l.title }),
@@ -1404,8 +1325,7 @@ function viewCard(l) {
       text: [l.year, l.transmission, l.fuelType, l.country].join(' · ')
     }),
     el('div', { style: 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap' }, [
-      el('span.price', { text: eur(l.price) }),
-      showLanded ? el('span.tiny.mono', { text: 'landed ≈ ' + eur(landedCost(l)) }) : null
+      el('span.price', { text: eur(l.price) })
     ]),
     el('div.mono', {
       style: 'font-size:13px;color:var(--text-3)',
@@ -1460,7 +1380,7 @@ function viewTable(list) {
           th('Listing'), th('Year', 'year'), th('Price', 'price'),
           th('Mileage', 'mileage'), th('Engine'), th('HP', 'horsepower'),
           th('Transmission'), th('History'), th('Features'),
-          th('Landed cost'), th('Source'), th('Actions')
+          th('Source'), th('Actions')
         ])
       ]),
       el('tbody', null, list.map(function (l) {
@@ -1496,7 +1416,6 @@ function viewTable(list) {
             style: 'max-width:220px;font-size:12.5px;color:var(--text-2)',
             text: featuresText(l.features)
           }),
-          el('td.mono', { text: l.country === 'Germany' ? eur(landedCost(l)) : '—' }),
           el('td', null, [
             l.url ? el('a', {
               href: l.url, target: '_blank', rel: 'noopener noreferrer',
@@ -1696,7 +1615,6 @@ function viewCompareSheet() {
     ['Trim', function (l) { return l.trim || '—'; }],
     ['Year', function (l) { return String(l.year); }],
     ['Price', function (l) { return eur(l.price); }],
-    ['Landed cost', function (l) { return eur(landedCost(l)); }],
     ['Mileage', function (l) { return km(l.mileage); }],
     ['Engine', function (l) { return l.engineSize + ' cm³'; }],
     ['Horsepower', function (l) { return l.horsepower + ' hp'; }],
@@ -1704,8 +1622,7 @@ function viewCompareSheet() {
     ['Fuel', function (l) { return l.fuelType; }],
     ['Features', function (l) { return featuresText(l.features); }],
     ['Accident history', function (l) { return historyText(l); }],
-    ['Source', function (l) { return l.sourceSite; }],
-    ['Market', function (l) { return l.country; }]
+    ['Source', function (l) { return l.sourceSite; }]
   ];
 
   return el('div.modal', {
