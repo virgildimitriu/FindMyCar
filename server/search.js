@@ -4,26 +4,28 @@ var as24 = require('./adapters/autoscout24');
 var mobileDe = require('./adapters/mobileDe');
 var publi24 = require('./adapters/publi24');
 var olx = require('./adapters/olx');
-var openlane = require('./adapters/openlane');
 var util = require('./adapters/util');
 
+// OpenLane.eu was attempted via a headless browser (Playwright) but dropped:
+// its data only exists after the site's own JS runs, which needed a real
+// browser to fetch server-side — after fixing three separate Render
+// deploy/runtime issues (root-only apt install, missing headless-shell
+// binary, browsers cache not surviving build→runtime) it launched
+// successfully but returned 0 results, likely a cookie-consent modal
+// blocking the real request in headless mode. Not worth a fourth round of
+// blind fixes for one of seven sources — it's deep-link-only now, same as
+// mobile.de.
 var ADAPTERS = {
   'Autovit.ro': autovit,
   'AutoScout24.ro': as24.ro,
   'AutoScout24.de': as24.de,
   'mobile.de': mobileDe,
   'publi24.ro': publi24,
-  'OLX.ro': olx,
-  'OpenLane.eu': openlane
+  'OLX.ro': olx
 };
 
 var MAX_BRANDS = 6;
-// "Heavy" adapters (currently just OpenLane, which drives a real headless
-// browser per brand) get far fewer brand runs — each one is much more
-// expensive than a plain HTTP fetch.
-var MAX_BRANDS_HEAVY = 2;
 var PER_REQUEST_TIMEOUT_MS = 9000;
-var PER_REQUEST_TIMEOUT_MS_HEAVY = 25000;
 
 function dedupe(listings) {
   var seen = {};
@@ -98,13 +100,9 @@ async function runSearch(filters) {
   var requestedSources = (filters.sources && filters.sources.length) ? filters.sources : Object.keys(ADAPTERS);
   var siteNames = requestedSources.filter(function (s) { return ADAPTERS[s]; });
   var brands = (filters.brands || []).slice(0, MAX_BRANDS);
-  var brandsHeavy = brands.slice(0, MAX_BRANDS_HEAVY);
 
   var perSite = await Promise.all(siteNames.map(function (siteName) {
-    var adapter = ADAPTERS[siteName];
-    return runSite(adapter, siteName, filters,
-      adapter.heavy ? brandsHeavy : brands,
-      adapter.heavy ? PER_REQUEST_TIMEOUT_MS_HEAVY : PER_REQUEST_TIMEOUT_MS);
+    return runSite(ADAPTERS[siteName], siteName, filters, brands, PER_REQUEST_TIMEOUT_MS);
   }));
 
   var sources = perSite.map(function (r) { return r.entry; });
@@ -121,10 +119,6 @@ async function runSearch(filters) {
   if (filters.features && filters.features.length) {
     notes.push('Required features aren\'t shown on search-result pages either, so automated results have ' +
       'no equipment data and are hidden by this filter too — check the listing itself.');
-  }
-  if (siteNames.indexOf('OpenLane.eu') > -1) {
-    notes.push('OpenLane.eu is a wholesale dealer-auction platform — only "Buy Now" listings (a real fixed ' +
-      'price) are included, but actually purchasing one typically still needs a registered trade account.');
   }
   if (siteNames.indexOf('OLX.ro') > -1 && siteNames.indexOf('Autovit.ro') > -1) {
     notes.push('Some OLX.ro car listings are cross-posted from Autovit.ro, so the same car can appear twice ' +

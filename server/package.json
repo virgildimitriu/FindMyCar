@@ -5,11 +5,7 @@
   "description": "Search backend for Find My Car: fetches Autovit.ro / AutoScout24.ro / AutoScout24.de / publi24.ro / OLX.ro (mobile.de best-effort) and normalises listings.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "npx playwright install chromium chromium-headless-shell"
-  },
-  "dependencies": {
-    "playwright": "^1.47.0"
+    "start": "node index.js"
   },
   "engines": {
     "node": ">=18"
