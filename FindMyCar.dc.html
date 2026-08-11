@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:oklch(0.98 0.006 90);color:oklch(0.2 0.01 90);font-family:'Work Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::placeholder{color:oklch(0.62 0.01 90)}
+</style>
+</helmet>
+<div style="min-height:100vh;padding-bottom:60px">
+
+<div style="position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid oklch(0.9 0.006 90);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:14px">
+    <button onClick="{{ toggleRail }}" title="Saved searches" style="background:none;border:1px solid oklch(0.88 0.006 90);width:38px;height:38px;border-radius:9px;font-size:15px;cursor:pointer;color:oklch(0.35 0.01 90);display:flex;align-items:center;justify-content:center" style-hover="background:oklch(0.97 0.006 90)">☰</button>
+    <div>
+      <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">Find My Car</div>
+      <div style="font-size:13px;color:oklch(0.52 0.01 90);margin-top:2px">{{ activeSearchLabel }} · Romania &amp; Germany</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;align-items:flex-start">
+
+<sc-if value="{{ railBackdrop }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ toggleRail }}" style="position:fixed;inset:0;background:rgba(20,20,18,0.4);z-index:29"></div>
+</sc-if>
+<sc-if value="{{ railOpen }}" hint-placeholder-val="{{ true }}">
+  <aside style="{{ railStyle }}">
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+        <div style="font-size:11px;font-weight:700;color:oklch(0.55 0.01 90);text-transform:uppercase;letter-spacing:.08em">Saved searches</div>
+        <div style="font-size:11px;color:oklch(0.62 0.01 90);font-family:'Space Mono',monospace">{{ savedCountLabel }}</div>
+      </div>
+      <div style="font-size:12px;color:oklch(0.62 0.01 90);margin-top:4px">Your criteria, kept for later.</div>
+    </div>
+
+    <sc-if value="{{ showRailSearch }}" hint-placeholder-val="{{ false }}">
+      <input type="text" value="{{ railQuery }}" onChange="{{ updateRailQuery }}" placeholder="Filter saved searches…" style="width:100%;padding:8px 10px;border:1px solid oklch(0.9 0.006 90);border-radius:8px;font-size:12.5px;font-family:inherit;background:oklch(0.98 0.006 90)">
+    </sc-if>
+
+    <button onClick="{{ newSearch }}" style="background:oklch(0.97 0.006 90);border:1px dashed oklch(0.82 0.006 90);color:oklch(0.35 0.01 90);padding:10px 12px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left" style-hover="background:oklch(0.94 0.02 145);border-color:oklch(0.75 0.08 145)">+ New search</button>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+      <sc-if value="{{ railNoMatches }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;color:oklch(0.62 0.01 90);padding:6px 2px">No saved search matches that name.</div>
+      </sc-if>
+      <sc-if value="{{ !hasSavedSearches }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;color:oklch(0.62 0.01 90);line-height:1.5;padding:6px 2px">Nothing saved yet. Set your filters, give them a name below, and they'll appear here.</div>
+      </sc-if>
+      <sc-for list="{{ savedSearchList }}" as="q" hint-placeholder-count="3">
+        <div style="display:flex;align-items:stretch;gap:10px;background:{{ q.bg }};border:1px solid {{ q.border }};border-radius:10px;padding:10px 10px 10px 0" style-hover="background:oklch(0.97 0.006 90)">
+          <div style="flex:0 0 3px;border-radius:3px;background:{{ q.barColor }}"></div>
+          <div style="flex:1;min-width:0">
+            <button onClick="{{ q.onLoad }}" style="background:none;border:none;padding:0;text-align:left;width:100%;cursor:pointer;font-family:inherit">
+              <div style="font-size:13.5px;font-weight:600;color:{{ q.nameColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ q.name }}</div>
+              <div style="font-size:11.5px;color:oklch(0.55 0.01 90);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ q.brandText }}</div>
+              <div style="font-size:11px;color:oklch(0.58 0.01 90);margin-top:4px;font-family:'Space Mono',monospace">{{ q.priceText }} · {{ q.yearText }}</div>
+              <div style="font-size:11px;color:oklch(0.45 0.1 145);margin-top:5px;font-weight:600">{{ q.countText }}</div>
+            </button>
+          </div>
+          <button onClick="{{ q.onDelete }}" title="Delete" style="background:none;border:none;color:oklch(0.7 0.01 90);font-size:14px;line-height:1;cursor:pointer;padding:2px 2px 0 0;align-self:flex-start" style-hover="color:oklch(0.55 0.18 25)">×</button>
+        </div>
+      </sc-for>
+    </div>
+
+  </aside>
+</sc-if>
+
+<div style="flex:1;min-width:0;max-width:1180px;margin:0 auto;padding:20px 24px">
+
+  <div style="background:#fff;border:1px solid oklch(0.9 0.006 90);border-radius:12px;padding:20px 22px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:15px;font-weight:600">Filters</div>
+      <div style="display:flex;gap:10px">
+        <button onClick="{{ resetFilters }}" style="background:none;border:1px solid oklch(0.88 0.006 90);color:oklch(0.45 0.01 90);padding:7px 12px;border-radius:7px;font-size:12.5px;cursor:pointer">Clear all</button>
+        <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ toggleShowFilters }}" style="background:none;border:1px solid oklch(0.88 0.006 90);color:oklch(0.45 0.01 90);padding:7px 12px;border-radius:7px;font-size:12.5px;cursor:pointer">Hide filters</button>
+        </sc-if>
+        <sc-if value="{{ !showFilters }}">
+          <button onClick="{{ toggleShowFilters }}" style="background:none;border:1px solid oklch(0.88 0.006 90);color:oklch(0.45 0.01 90);padding:7px 12px;border-radius:7px;font-size:12.5px;cursor:pointer">Show filters</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-bottom:16px;border-bottom:1px solid oklch(0.93 0.006 90)">
+      <input type="text" value="{{ searchName }}" onChange="{{ updateSearchName }}" placeholder="Name this search, e.g. Tiguan DSG DE" style="flex:1;min-width:200px;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:inherit">
+      <sc-if value="{{ !hasActiveSearch }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ saveSearch }}" style="background:none;border:1px solid oklch(0.85 0.006 90);color:oklch(0.35 0.01 90);padding:9px 16px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit">Save search</button>
+      </sc-if>
+      <button onClick="{{ primarySearchAction }}" style="background:oklch(0.55 0.15 145);color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit" style-hover="background:oklch(0.48 0.15 145)">{{ primarySearchLabel }}</button>
+    </div>
+    <sc-if value="{{ hasSearchStatus }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:10px;font-size:12.5px;color:oklch(0.5 0.06 60);background:oklch(0.97 0.03 85);border:1px solid oklch(0.9 0.05 85);border-radius:8px;padding:9px 12px">{{ searchStatus }}</div>
+    </sc-if>
+
+    <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:16px">
+        <div style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 90);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Brand</div>
+        <div style="margin-bottom:12px;max-width:280px">
+          <select value="{{ brandSelectValue }}" onChange="{{ selectBrand }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;background:#fff;font-family:inherit">
+            <option value="">Select a brand to add…</option>
+            <sc-for list="{{ allBrands }}" as="b" hint-placeholder-count="12">
+              <option value="{{ b }}">{{ b }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+          <sc-for list="{{ selectedBrands }}" as="b" hint-placeholder-count="3">
+            <span style="display:inline-flex;align-items:center;gap:7px;background:oklch(0.95 0.04 145);border:1px solid oklch(0.88 0.05 145);color:oklch(0.34 0.09 145);padding:5px 8px 5px 11px;border-radius:20px;font-size:13px">
+              {{ b.name }}
+              <button onClick="{{ b.onRemove }}" style="background:none;border:none;color:oklch(0.45 0.06 145);font-size:14px;line-height:1;cursor:pointer;padding:0">×</button>
+            </span>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-bottom:18px">
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Model (optional)</div>
+            <input type="text" value="{{ filters.model }}" onChange="{{ updateModel }}" placeholder="e.g. Kodiaq" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:inherit">
+          </div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Price min (€)</div>
+            <input type="number" value="{{ filters.priceMin }}" onChange="{{ updatePriceMin }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+          </div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Price max (€)</div>
+            <input type="number" value="{{ filters.priceMax }}" onChange="{{ updatePriceMax }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+          </div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Year from</div>
+            <input type="number" value="{{ filters.yearMin }}" onChange="{{ updateYearMin }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+          </div>
+          <div aria-hidden="true"></div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Max engine (cm³)</div>
+            <input type="number" value="{{ filters.engineMax }}" onChange="{{ updateEngineMax }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+          </div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Min horsepower</div>
+            <input type="number" value="{{ filters.hpMin }}" onChange="{{ updateHpMin }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+          </div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Transmission</div>
+            <select value="{{ filters.transmission }}" onChange="{{ updateTransmission }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:inherit;background:#fff">
+              <option value="Automatic">Automatic</option>
+              <option value="Manual">Manual</option>
+              <option value="Either">Either</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Market</div>
+            <select value="{{ filters.country }}" onChange="{{ updateCountry }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:inherit;background:#fff">
+              <option value="both">Romania &amp; Germany</option>
+              <option value="Romania">Romania only</option>
+              <option value="Germany">Germany only</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 90);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Required features</div>
+        <div style="margin-bottom:12px;max-width:280px">
+          <select value="{{ featureSelectValue }}" onChange="{{ selectFeature }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;background:#fff;font-family:inherit">
+            <option value="">Select a required feature…</option>
+            <sc-for list="{{ availableFeatures }}" as="ft" hint-placeholder-count="6">
+              <option value="{{ ft.key }}">{{ ft.label }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+          <sc-for list="{{ selectedFeatures }}" as="ft" hint-placeholder-count="1">
+            <span style="display:inline-flex;align-items:center;gap:7px;background:oklch(0.95 0.04 145);border:1px solid oklch(0.88 0.05 145);color:oklch(0.34 0.09 145);padding:5px 8px 5px 11px;border-radius:20px;font-size:13px">
+              {{ ft.label }}
+              <button onClick="{{ ft.onRemove }}" style="background:none;border:none;color:oklch(0.45 0.06 145);font-size:14px;line-height:1;cursor:pointer;padding:0">×</button>
+            </span>
+          </sc-for>
+        </div>
+
+        <button onClick="{{ toggleAccidentFree }}" style="display:inline-flex;align-items:center;gap:10px;background:{{ accFreeBg }};border:1px solid {{ accFreeBorder }};color:{{ accFreeColor }};padding:0;border-radius:0;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:18px">
+          <span style="width:30px;height:18px;border-radius:10px;background:{{ accFreeTrack }};position:relative;flex:0 0 auto;transition:background .15s">
+            <span style="position:absolute;top:2px;left:{{ accFreeKnob }};width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.2);transition:left .15s"></span>
+          </span>
+          Accident-free history only
+        </button>
+
+        <div style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 90);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Where to search</div>
+        <div style="margin-bottom:12px;max-width:280px">
+          <select value="{{ siteSelectValue }}" onChange="{{ selectSite }}" style="width:100%;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;background:#fff;font-family:inherit">
+            <option value="">Select a site…</option>
+            <sc-for list="{{ availableSites }}" as="st" hint-placeholder-count="5">
+              <option value="{{ st }}">{{ st }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;align-items:center">
+          <sc-if value="{{ allSitesActive }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:12.5px;color:oklch(0.6 0.01 90)">All sites included</span>
+          </sc-if>
+          <sc-for list="{{ selectedSites }}" as="st" hint-placeholder-count="1">
+            <span style="display:inline-flex;align-items:center;gap:7px;background:oklch(0.95 0.04 145);border:1px solid oklch(0.88 0.05 145);color:oklch(0.34 0.09 145);padding:5px 8px 5px 11px;border-radius:20px;font-size:13px">
+              {{ st.name }}
+              <button onClick="{{ st.onRemove }}" style="background:none;border:none;color:oklch(0.45 0.06 145);font-size:14px;line-height:1;cursor:pointer;padding:0">×</button>
+            </span>
+          </sc-for>
+        </div>
+
+        <div style="border-top:1px solid oklch(0.92 0.006 90);padding-top:16px">
+          <div style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 90);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Landed cost assumptions (imports from Germany)</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Transport estimate (€)</div>
+              <input type="number" value="{{ transportEstimate }}" onChange="{{ updateTransport }}" style="width:160px;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+            </div>
+            <div>
+              <div style="font-size:12px;color:oklch(0.5 0.01 90);margin-bottom:5px">Registration / RAR fees (€)</div>
+              <input type="number" value="{{ rarFees }}" onChange="{{ updateRar }}" style="width:160px;padding:9px 10px;border:1px solid oklch(0.88 0.006 90);border-radius:7px;font-size:14px;font-family:'Space Mono',monospace">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+    <sc-if value="{{ selectedCount }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ openCompare }}" disabled="{{ !canCompare }}" style="background:oklch(0.2 0.01 90);color:#fff;border:none;padding:9px 16px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer">Compare ({{ selectedCount }})</button>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ hasRecommendations }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px solid oklch(0.9 0.006 90);border-radius:12px;padding:18px 20px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:oklch(0.4 0.01 90);margin-bottom:4px">Recommendations</div>
+      <div style="font-size:12px;color:oklch(0.6 0.01 90);margin-bottom:14px">Ranked on landed cost, mileage, power, equipment and year across your filtered results.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+        <sc-for list="{{ recommendations }}" as="r" hint-placeholder-count="3">
+          <div style="border:1px solid oklch(0.92 0.006 90);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:oklch(0.42 0.14 145)">{{ r.badge }}</span>
+              <span style="font-family:'Space Mono',monospace;font-size:12px;color:oklch(0.5 0.01 90)">{{ r.scoreText }}</span>
+            </div>
+            <div style="font-size:14px;font-weight:600;line-height:1.3">{{ r.title }}</div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px">{{ r.priceFmt }} <span style="color:oklch(0.55 0.01 90);font-size:11.5px">landed {{ r.landedFmt }}</span></div>
+            <div style="font-size:12.5px;color:oklch(0.45 0.01 90)">{{ r.reasonText }}</div>
+            <div style="display:flex;gap:10px;margin-top:2px">
+              <button onClick="{{ r.onShortlist }}" style="background:none;border:1px solid oklch(0.88 0.006 90);padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">Shortlist</button>
+              <a href="{{ r.url }}" target="_blank" rel="noopener" style="font-size:12px;color:oklch(0.42 0.14 145);text-decoration:none;align-self:center">Open listing ↗</a>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasChart }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px solid oklch(0.9 0.006 90);border-radius:12px;padding:18px 20px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:oklch(0.4 0.01 90);margin-bottom:10px">Price vs. mileage (filtered results)</div>
+      <svg width="100%" height="180" viewBox="0 0 400 180" style="overflow:visible">
+        <line x1="24" y1="156" x2="376" y2="156" stroke="oklch(0.88 0.006 90)"></line>
+        <line x1="24" y1="24" x2="24" y2="156" stroke="oklch(0.88 0.006 90)"></line>
+        <sc-for list="{{ chartPoints }}" as="p" hint-placeholder-count="3">
+          <circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ p.r }}" fill="{{ p.fill }}"><title>{{ p.label }}</title></circle>
+        </sc-for>
+      </svg>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:oklch(0.6 0.01 90);margin-top:2px">
+        <span>lower mileage</span><span>higher mileage →</span>
+      </div>
+      <div style="font-size:11px;color:oklch(0.6 0.01 90);margin-top:4px">↑ higher price · amber dots are shortlisted</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ !hasListings }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px dashed oklch(0.85 0.006 90);border-radius:12px;padding:48px 20px;text-align:center;color:oklch(0.5 0.01 90)">
+      <sc-if value="{{ noListingsAtAll }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:15px;margin-bottom:12px">No listings yet.</div>
+      </sc-if>
+      <sc-if value="{{ !noListingsAtAll }}">
+        <div style="font-size:15px;margin-bottom:12px">No listings match your current filters.</div>
+      </sc-if>
+      <div style="font-size:13px;line-height:1.6;max-width:540px;margin:0 auto;color:oklch(0.55 0.01 90)">Results arrive from the search service once it is connected — set your criteria above and press Search. Until then the table stays empty.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <sc-for list="{{ mobileListings }}" as="item" hint-placeholder-count="0">
+      <div style="background:#fff;border:1px solid oklch(0.9 0.006 90);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="font-size:15px;font-weight:600;line-height:1.3">{{ item.title }}</div>
+          <button onClick="{{ item.onToggleShortlist }}" style="background:none;border:none;font-size:20px;cursor:pointer;color:{{ item.starColor }};line-height:1;padding:0">{{ item.starSymbol }}</button>
+        </div>
+        <div style="font-size:13px;color:oklch(0.5 0.01 90)">{{ item.year }} · {{ item.transmission }} · {{ item.fuelType }} · {{ item.country }}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;font-family:'Space Mono',monospace">
+          <span style="font-size:18px;font-weight:700">{{ item.priceFmt }}</span>
+          <sc-if value="{{ item.showLanded }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:12px;color:oklch(0.5 0.01 90)">landed ≈ {{ item.landedCostFmt }}</span>
+          </sc-if>
+        </div>
+        <div style="font-size:13px;color:oklch(0.5 0.01 90);font-family:'Space Mono',monospace">{{ item.mileageFmt }} · {{ item.engineSize }} cm³ · {{ item.horsepower }} hp</div>
+        <div style="font-size:12.5px;color:{{ item.accidentColor }}">{{ item.accidentText }}</div>
+        <div style="font-size:12.5px;color:oklch(0.45 0.01 90)">{{ item.featuresText }}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid oklch(0.93 0.006 90);padding-top:10px;margin-top:2px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:oklch(0.5 0.01 90)">
+            <input type="checkbox" checked="{{ item.isSelected }}" disabled="{{ !item.canSelect }}" onChange="{{ item.onToggleSelect }}">
+            Compare
+          </label>
+          <div style="display:flex;gap:8px">
+            <a href="{{ item.url }}" target="_blank" rel="noopener" style="font-size:12.5px;color:oklch(0.42 0.14 145);text-decoration:none;align-self:center">{{ item.sourceSite }} ↗</a>
+            <button onClick="{{ item.onDelete }}" style="background:none;border:1px solid oklch(0.9 0.1 25);color:oklch(0.55 0.18 25);padding:5px 10px;border-radius:6px;font-size:12.5px;cursor:pointer">Delete</button>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </sc-if>
+
+  <sc-if value="{{ !isMobile }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid oklch(0.9 0.006 90);border-radius:12px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;min-width:1040px">
+        <thead>
+          <tr style="text-align:left;border-bottom:2px solid oklch(0.9 0.006 90)">
+            <th style="padding:12px 8px 12px 16px;width:36px"></th>
+            <th style="padding:12px 8px;width:32px"></th>
+            <th style="padding:12px 8px">Listing</th>
+            <th style="padding:12px 8px;cursor:pointer;white-space:nowrap" onClick="{{ sortByYear }}">Year {{ yearSortArrow }}</th>
+            <th style="padding:12px 8px;cursor:pointer;white-space:nowrap" onClick="{{ sortByPrice }}">Price {{ priceSortArrow }}</th>
+            <th style="padding:12px 8px;cursor:pointer;white-space:nowrap" onClick="{{ sortByMileage }}">Mileage {{ mileageSortArrow }}</th>
+            <th style="padding:12px 8px">Engine</th>
+            <th style="padding:12px 8px;cursor:pointer;white-space:nowrap" onClick="{{ sortByHp }}">HP {{ hpSortArrow }}</th>
+            <th style="padding:12px 8px">Transmission</th>
+            <th style="padding:12px 8px">History</th>
+            <th style="padding:12px 8px">Features</th>
+            <th style="padding:12px 8px">Landed cost</th>
+            <th style="padding:12px 8px">Source</th>
+            <th style="padding:12px 16px 12px 8px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ tableListings }}" as="item" hint-placeholder-count="3">
+            <tr style="border-bottom:1px solid oklch(0.94 0.006 90);background:{{ item.rowBg }}">
+              <td style="padding:10px 8px 10px 16px">
+                <input type="checkbox" checked="{{ item.isSelected }}" disabled="{{ !item.canSelect }}" onChange="{{ item.onToggleSelect }}">
+              </td>
+              <td style="padding:10px 8px">
+                <button onClick="{{ item.onToggleShortlist }}" style="background:none;border:none;font-size:17px;cursor:pointer;color:{{ item.starColor }};line-height:1;padding:0">{{ item.starSymbol }}</button>
+              </td>
+              <td style="padding:10px 8px">
+                <div style="font-weight:600">{{ item.title }}</div>
+                <div style="font-size:12px;color:oklch(0.55 0.01 90)">{{ item.fuelType }} · {{ item.country }}</div>
+              </td>
+              <td style="padding:10px 8px">{{ item.year }}</td>
+              <td style="padding:10px 8px;font-family:'Space Mono',monospace;font-weight:600">{{ item.priceFmt }}</td>
+              <td style="padding:10px 8px;font-family:'Space Mono',monospace">{{ item.mileageFmt }}</td>
+              <td style="padding:10px 8px;font-family:'Space Mono',monospace">{{ item.engineSize }} cm³</td>
+              <td style="padding:10px 8px;font-family:'Space Mono',monospace">{{ item.horsepower }}</td>
+              <td style="padding:10px 8px">{{ item.transmission }}</td>
+              <td style="padding:10px 8px;font-size:12.5px;color:{{ item.accidentColor }}">{{ item.accidentText }}</td>
+              <td style="padding:10px 8px;max-width:220px;font-size:12.5px;color:oklch(0.45 0.01 90)">{{ item.featuresText }}</td>
+              <td style="padding:10px 8px;font-family:'Space Mono',monospace">{{ item.landedCostDisplay }}</td>
+              <td style="padding:10px 8px">
+                <a href="{{ item.url }}" target="_blank" rel="noopener" style="color:oklch(0.42 0.14 145);text-decoration:none;font-size:12.5px">{{ item.sourceSite }} ↗</a>
+              </td>
+              <td style="padding:10px 16px 10px 8px;white-space:nowrap">
+                <button onClick="{{ item.onDelete }}" style="background:none;border:1px solid oklch(0.9 0.1 25);color:oklch(0.55 0.18 25);padding:5px 9px;border-radius:6px;font-size:12px;cursor:pointer">Delete</button>
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </sc-if>
+
+</div>
+</div>
+
+
+<sc-if value="{{ isCompareOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:rgba(20,20,18,0.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px">
+    <div style="background:#fff;border-radius:14px;padding:26px;max-width:920px;width:100%;max-height:88vh;overflow-y:auto;overflow-x:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div style="font-size:17px;font-weight:700">Compare listings</div>
+        <button onClick="{{ closeCompare }}" style="background:none;border:none;font-size:20px;cursor:pointer;color:oklch(0.5 0.01 90)">×</button>
+      </div>
+
+      <div style="min-width:560px">
+        <div style="display:grid;grid-template-columns:{{ compareGridColumns }};gap:12px;padding-bottom:14px;border-bottom:2px solid oklch(0.9 0.006 90)">
+          <div></div>
+          <sc-for list="{{ compareListings }}" as="cl" hint-placeholder-count="2">
+            <div>
+              <div style="font-weight:700;font-size:14px;margin-bottom:4px">{{ cl.title }}</div>
+              <div style="font-family:'Space Mono',monospace;font-weight:600;font-size:14px;margin-bottom:6px">{{ cl.priceFmt }}</div>
+              <div style="display:flex;gap:8px">
+                <a href="{{ cl.url }}" target="_blank" rel="noopener" style="font-size:12px;color:oklch(0.42 0.14 145);text-decoration:none">View ↗</a>
+                <button onClick="{{ cl.onRemove }}" style="background:none;border:none;font-size:12px;color:oklch(0.55 0.18 25);cursor:pointer;padding:0">Remove</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-for list="{{ compareRows }}" as="row" hint-placeholder-count="15">
+          <div style="display:grid;grid-template-columns:{{ compareGridColumns }};gap:12px;padding:10px 0;border-bottom:1px solid oklch(0.94 0.006 90)">
+            <div style="font-size:12.5px;font-weight:600;color:oklch(0.5 0.01 90)">{{ row.label }}</div>
+            <sc-for list="{{ row.values }}" as="v" hint-placeholder-count="2">
+              <div style="font-size:13px">{{ v }}</div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  BRANDS = ['Audi', 'BMW', 'Citroën', 'Cupra', 'Dacia', 'Fiat', 'Ford', 'Honda', 'Hyundai', 'Kia', 'Mazda', 'Mercedes-Benz', 'Nissan', 'Opel', 'Peugeot', 'Renault', 'Seat', 'Škoda', 'Suzuki', 'Toyota', 'Volkswagen', 'Volvo'];
+  FEATURES = [
+    { key: 'rearCamera', label: 'Rear camera' },
+    { key: 'parkingSensors', label: 'Parking sensors' },
+    { key: 'cruiseControl', label: 'Cruise control / adaptive' },
+    { key: 'heatedSeats', label: 'Heated seats' },
+    { key: 'navigation', label: 'Navigation' },
+    { key: 'carplay', label: 'CarPlay / Android Auto' },
+    { key: 'frontCamera', label: 'Front camera / 360° view' },
+    { key: 'blindSpot', label: 'Blind spot monitor' },
+    { key: 'laneAssist', label: 'Lane keep assist' },
+    { key: 'ledMatrix', label: 'LED / matrix headlights' },
+    { key: 'panoramicRoof', label: 'Panoramic roof' },
+    { key: 'towbar', label: 'Towbar' },
+    { key: 'leatherSeats', label: 'Leather upholstery' },
+    { key: 'electricSeats', label: 'Electric seats' },
+    { key: 'heatedWheel', label: 'Heated steering wheel' },
+    { key: 'keyless', label: 'Keyless entry / start' },
+    { key: 'dualClimate', label: 'Dual-zone climate' },
+    { key: 'powerTailgate', label: 'Electric tailgate' },
+    { key: 'awd', label: 'All-wheel drive' },
+    { key: 'headUp', label: 'Head-up display' },
+    { key: 'trafficSign', label: 'Traffic sign recognition' },
+    { key: 'parkAssist', label: 'Automatic parking assist' },
+  ];
+  SITES = ['Autovit.ro', 'AutoScout24.ro', 'AutoScout24.de', 'mobile.de', 'Other'];
+  SITES = ['Autovit.ro', 'AutoScout24.ro', 'AutoScout24.de', 'mobile.de', 'OLX.ro', 'Mobile.ro', 'Carvago', 'Auto1.com'];
+  ACCENT = 'oklch(0.55 0.15 145)';
+  STAR = 'oklch(0.68 0.15 85)';
+  STAR_OFF = 'oklch(0.8 0.006 90)';
+  ACCENT_SOFT = 'oklch(0.95 0.04 145)';
+
+  state = {
+    listings: [],
+    filters: {
+      brands: ['Volkswagen', 'Škoda', 'Kia'],
+      model: '',
+      priceMin: 14000, priceMax: 20000,
+      yearMin: 2023, yearMax: 2024,
+      engineMax: 2000,
+      hpMin: 150,
+      transmission: 'Automatic',
+      features: ['rearCamera'],
+      country: 'both',
+      accidentFree: true,
+      sources: [],
+    },
+    shortlistOnly: false,
+    showFilters: true,
+    savedSearches: [],
+    activeSearchId: null,
+    searchName: '',
+    railOpen: typeof window !== 'undefined' ? window.innerWidth >= 860 : true,
+    railQuery: '',
+    pasteText: '',
+    pasteFeedback: '',
+    searchStatus: '',
+    sortKey: 'price', sortDir: 'asc',
+    selectedIds: [],
+    isAddOpen: false,
+    isCompareOpen: false,
+    editId: null,
+    formData: this.blankForm(),
+    windowWidth: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    transportEstimate: 450,
+    rarFees: 800,
+  };
+
+  blankForm() {
+    return { title: '', brand: 'Volkswagen', model: '', trim: '', year: '', price: '', mileage: '', engineSize: '', horsepower: '', transmission: 'Automatic', fuelType: 'Petrol', features: [], sourceSite: 'Autovit.ro', url: '', country: 'Romania', accidentStatus: 'accident-free' };
+  }
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ windowWidth: window.innerWidth });
+    window.addEventListener('resize', this.onResize);
+    try {
+      const qs = JSON.parse(localStorage.getItem('findmycar_searches_v1'));
+      if (qs && qs.length) this.setState({ savedSearches: qs });
+    } catch (e) {}
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem('findmycar_listings_v1') || localStorage.getItem('carfinder_listings_v1')); } catch (e) {}
+    if (saved && saved.length) {
+      const migrated = saved.map(l => l.accidentStatus ? l : { ...l, accidentStatus: 'accident-free', accidentFree: true });
+      this.setState({ listings: migrated });
+      this.persist(migrated);
+    } else {
+      const seed = this.seedListings();
+      this.setState({ listings: seed });
+      this.persist(seed);
+    }
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); }
+
+  persist(listings) { try { localStorage.setItem('findmycar_listings_v1', JSON.stringify(listings)); } catch (e) {} }
+
+  seedListings() {
+    return [
+      { id: 's1', title: 'VW Tiguan Life 2.0 TDI DSG', brand: 'Volkswagen', model: 'Tiguan', trim: 'Life', year: 2023, price: 18500, mileage: 22000, engineSize: 1968, horsepower: 150, transmission: 'Automatic', fuelType: 'Diesel', features: ['rearCamera', 'parkingSensors', 'cruiseControl', 'carplay'], sourceSite: 'AutoScout24.de', url: 'https://www.autoscout24.de/', country: 'Germany', shortlisted: true, accidentStatus: 'accident-free', accidentFree: true },
+      { id: 's2', title: 'Škoda Kodiaq Style 2.0 TSI DSG', brand: 'Škoda', model: 'Kodiaq', trim: 'Style', year: 2024, price: 19800, mileage: 9000, engineSize: 1984, horsepower: 190, transmission: 'Automatic', fuelType: 'Petrol', features: ['rearCamera', 'parkingSensors', 'cruiseControl', 'heatedSeats', 'navigation', 'carplay'], sourceSite: 'mobile.de', url: 'https://www.mobile.de/', country: 'Germany', shortlisted: false, accidentStatus: 'accident-free', accidentFree: true },
+      { id: 's3', title: 'Kia Sportage GT-Line 1.6 T-GDI', brand: 'Kia', model: 'Sportage', trim: 'GT-Line', year: 2023, price: 16900, mileage: 15000, engineSize: 1598, horsepower: 150, transmission: 'Automatic', fuelType: 'Petrol', features: ['rearCamera', 'cruiseControl', 'heatedSeats', 'carplay'], sourceSite: 'Autovit.ro', url: 'https://www.autovit.ro/', country: 'Romania', shortlisted: false, accidentStatus: 'repaired damage', accidentFree: false },
+    ];
+  }
+
+  updateFilter(key, val) { this.setState(s => ({ filters: { ...s.filters, [key]: val } })); }
+  toggleBrandFilter(name) { this.setState(s => { const has = s.filters.brands.includes(name); const brands = has ? s.filters.brands.filter(b => b !== name) : [...s.filters.brands, name]; return { filters: { ...s.filters, brands } }; }); }
+  toggleFeatureFilter(key) { this.setState(s => { const has = s.filters.features.includes(key); const features = has ? s.filters.features.filter(f => f !== key) : [...s.filters.features, key]; return { filters: { ...s.filters, features } }; }); }
+  resetFilters() { this.setState({ filters: { brands: [], model: '', priceMin: '', priceMax: '', yearMin: '', yearMax: '', engineMax: '', hpMin: '', transmission: 'Either', features: [], country: 'both', accidentFree: false, sources: [] }, searchName: '', activeSearchId: null, selectedIds: [], shortlistOnly: false }); }
+  toggleSourceFilter(site) { this.setState(s => { const has = (s.filters.sources || []).includes(site); const sources = has ? s.filters.sources.filter(x => x !== site) : [...(s.filters.sources || []), site]; return { filters: { ...s.filters, sources } }; }); }
+  toggleShowFilters() { this.setState(s => ({ showFilters: !s.showFilters })); }
+  toggleAccidentFree() { this.setState(s => ({ filters: { ...s.filters, accidentFree: !s.filters.accidentFree } })); }
+
+  persistSearches(searches) { try { localStorage.setItem('findmycar_searches_v1', JSON.stringify(searches)); } catch (e) {} }
+  saveSearch() {
+    const name = (this.state.searchName || '').trim();
+    if (!name) return;
+    this.setState(s => {
+      const rec = { id: 'q' + Date.now(), name, filters: JSON.parse(JSON.stringify(s.filters)), transportEstimate: s.transportEstimate, rarFees: s.rarFees };
+      const existing = s.savedSearches.findIndex(q => q.name.toLowerCase() === name.toLowerCase());
+      const savedSearches = existing >= 0 ? s.savedSearches.map((q, i) => i === existing ? { ...rec, id: q.id } : q) : [...s.savedSearches, rec];
+      this.persistSearches(savedSearches);
+      return { savedSearches, activeSearchId: existing >= 0 ? s.savedSearches[existing].id : rec.id, searchName: name };
+    });
+  }
+  updateSearch() {
+    const id = this.state.activeSearchId;
+    if (!id) return;
+    this.setState(s => {
+      const savedSearches = s.savedSearches.map(q => q.id === id
+        ? { ...q, name: (s.searchName || '').trim() || q.name, filters: JSON.parse(JSON.stringify(s.filters)), transportEstimate: s.transportEstimate, rarFees: s.rarFees }
+        : q);
+      this.persistSearches(savedSearches);
+      return { savedSearches };
+    });
+  }
+  loadSearch(id) {
+    const q = this.state.savedSearches.find(x => x.id === id);
+    if (!q) return;
+    const closeRail = typeof window !== 'undefined' && window.innerWidth < 860;
+    this.setState({ filters: JSON.parse(JSON.stringify(q.filters)), transportEstimate: q.transportEstimate, rarFees: q.rarFees, activeSearchId: id, searchName: q.name, selectedIds: [], railOpen: closeRail ? false : this.state.railOpen });
+  }
+  deleteSearch(id) {
+    this.setState(s => {
+      const savedSearches = s.savedSearches.filter(q => q.id !== id);
+      this.persistSearches(savedSearches);
+      return { savedSearches, activeSearchId: s.activeSearchId === id ? null : s.activeSearchId };
+    });
+  }
+  newSearch() { this.resetFilters(); this.setState({ activeSearchId: null, searchName: '', selectedIds: [] }); }
+
+  scoreListing(l, ctx) {
+    const reasons = [];
+    let score = 0;
+    if (ctx.maxLanded > ctx.minLanded) {
+      const rel = 1 - (this.landedCost(l) - ctx.minLanded) / (ctx.maxLanded - ctx.minLanded);
+      score += rel * 40;
+      if (rel > 0.66) reasons.push('lowest landed cost in the set');
+    }
+    if (ctx.maxMileage > ctx.minMileage) {
+      const rel = 1 - (l.mileage - ctx.minMileage) / (ctx.maxMileage - ctx.minMileage);
+      score += rel * 25;
+      if (rel > 0.66) reasons.push('low mileage');
+    }
+    if (ctx.maxHp > ctx.minHp) {
+      const rel = (l.horsepower - ctx.minHp) / (ctx.maxHp - ctx.minHp);
+      score += rel * 15;
+      if (rel > 0.66) reasons.push(l.horsepower + ' hp');
+    }
+    const featRel = l.features.length / this.FEATURES.length;
+    score += featRel * 15;
+    if (l.features.length >= 5) reasons.push(l.features.length + ' equipment items');
+    if (l.year >= ctx.maxYear) { score += 5; reasons.push('newest year in the set'); }
+    if (l.accidentFree === true) reasons.push('declared accident-free');
+    return { score, reasons };
+  }
+  toggleShortlistOnly() { this.setState(s => ({ shortlistOnly: !s.shortlistOnly })); }
+
+  sortBy(key) { this.setState(s => s.sortKey === key ? { sortDir: s.sortDir === 'asc' ? 'desc' : 'asc' } : { sortKey: key, sortDir: 'asc' }); }
+
+  toggleShortlist(id) { this.setState(s => { const listings = s.listings.map(l => l.id === id ? { ...l, shortlisted: !l.shortlisted } : l); this.persist(listings); return { listings }; }); }
+  toggleSelect(id) {
+    this.setState(s => {
+      const has = s.selectedIds.includes(id);
+      if (has) return { selectedIds: s.selectedIds.filter(x => x !== id) };
+      if (s.selectedIds.length >= 3) return {};
+      return { selectedIds: [...s.selectedIds, id] };
+    });
+  }
+
+  openAdd() { this.setState({ isAddOpen: true, editId: null, formData: this.blankForm(), pasteText: '', pasteFeedback: '' }); }
+  openEdit(id) {
+    const l = this.state.listings.find(x => x.id === id);
+    if (!l) return;
+    this.setState({ isAddOpen: true, editId: id, formData: { ...l, year: String(l.year), price: String(l.price), mileage: String(l.mileage), engineSize: String(l.engineSize), horsepower: String(l.horsepower), accidentStatus: l.accidentStatus || (l.accidentFree === true ? 'accident-free' : 'unknown') } });
+  }
+  closeModal() { this.setState({ isAddOpen: false }); }
+  updateForm(key, val) { this.setState(s => ({ formData: { ...s.formData, [key]: val } })); }
+  toggleFormFeature(key) { this.setState(s => { const has = s.formData.features.includes(key); const features = has ? s.formData.features.filter(f => f !== key) : [...s.formData.features, key]; return { formData: { ...s.formData, features } }; }); }
+
+  saveListing() {
+    const f = this.state.formData;
+    if (!f.title.trim() || !f.price || !f.year) return;
+    const prev = this.state.editId ? this.state.listings.find(l => l.id === this.state.editId) : null;
+    const record = {
+      id: this.state.editId || ('l' + Date.now()),
+      title: f.title.trim(), brand: f.brand, model: f.model.trim(), trim: f.trim.trim(),
+      year: parseInt(f.year) || 0, price: parseFloat(f.price) || 0, mileage: parseInt(f.mileage) || 0,
+      engineSize: parseInt(f.engineSize) || 0, horsepower: parseInt(f.horsepower) || 0,
+      transmission: f.transmission, fuelType: f.fuelType, features: f.features,
+      sourceSite: f.sourceSite, url: f.url.trim(), country: f.country,
+      accidentStatus: f.accidentStatus, accidentFree: f.accidentStatus === 'accident-free',
+      shortlisted: prev ? !!prev.shortlisted : false,
+    };
+    this.setState(s => {
+      const listings = s.editId ? s.listings.map(l => l.id === s.editId ? record : l) : [...s.listings, record];
+      this.persist(listings);
+      return { listings, isAddOpen: false };
+    });
+  }
+
+  deleteListing(id) {
+    this.setState(s => {
+      const listings = s.listings.filter(l => l.id !== id);
+      const selectedIds = s.selectedIds.filter(x => x !== id);
+      this.persist(listings);
+      return { listings, selectedIds };
+    });
+  }
+
+  openCompare() { if (this.state.selectedIds.length >= 2) this.setState({ isCompareOpen: true }); }
+  closeCompare() { this.setState({ isCompareOpen: false }); }
+
+  landedCost(listing) {
+    return listing.country === 'Germany' ? listing.price + (Number(this.state.transportEstimate) || 0) + (Number(this.state.rarFees) || 0) : listing.price;
+  }
+
+  matchesFilters(l, filters) {
+    const f = filters || this.state.filters;
+    if (f.brands.length && !f.brands.includes(l.brand)) return false;
+    if (f.model && !l.model.toLowerCase().includes(f.model.toLowerCase())) return false;
+    if (f.priceMin !== '' && l.price < Number(f.priceMin)) return false;
+    if (f.priceMax !== '' && l.price > Number(f.priceMax)) return false;
+    if (f.yearMin !== '' && l.year < Number(f.yearMin)) return false;
+    if (f.yearMax !== '' && l.year > Number(f.yearMax)) return false;
+    if (f.engineMax !== '' && l.engineSize > Number(f.engineMax)) return false;
+    if (f.hpMin !== '' && l.horsepower < Number(f.hpMin)) return false;
+    if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
+    if (f.features.length && !f.features.every(feat => l.features.includes(feat))) return false;
+    if (f.country !== 'both' && l.country !== f.country) return false;
+    if ((f.sources || []).length && !f.sources.includes(l.sourceSite)) return false;
+    if (f.accidentFree && l.accidentFree !== true) return false;
+    if (f.sources && f.sources.length && !f.sources.includes(l.sourceSite)) return false;
+    if (!filters && this.state.shortlistOnly && !l.shortlisted) return false;
+    return true;
+  }
+
+  buildQuickLink(site) {
+    const brand = this.state.filters.brands[0];
+    const slug = brand ? brand.toLowerCase().replace('š', 's').replace('ë', 'e').replace(/\s+/g, '-') : '';
+    const map = {
+      'Autovit.ro': 'https://www.autovit.ro/autoturisme' + (slug ? '/' + slug : ''),
+      'AutoScout24.ro': 'https://www.autoscout24.ro/lst' + (slug ? '/' + slug : ''),
+      'AutoScout24.de': 'https://www.autoscout24.de/lst' + (slug ? '/' + slug : ''),
+      'mobile.de': 'https://www.mobile.de/ro/Autoturism/' + (slug ? slug + '/' : ''),
+      'OLX.ro': 'https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/' + (slug ? slug + '/' : ''),
+      'Mobile.ro': 'https://www.mobile.ro/',
+      'Carvago': 'https://carvago.com/cars' + (slug ? '?make=' + slug : ''),
+      'Auto1.com': 'https://www.auto1.com/',
+    };
+    return map[site] || '';
+  }
+
+  searchUrls() {
+    const f = this.state.filters;
+    const sites = (f.sources || []).length ? f.sources : this.SITES;
+    const brands = [(f.brands || [])[0] || ''];
+    const slug = b => b.toLowerCase().replace('š', 's').replace('ë', 'e').replace(/\s+/g, '-');
+    const auto = f.transmission === 'Automatic';
+    const urls = [];
+    sites.forEach(site => brands.forEach(b => {
+      const s = b ? slug(b) : '';
+      let u = '';
+      if (site === 'Autovit.ro') {
+        const p = [];
+        if (f.priceMin) p.push('search%5Bfilter_float_price%3Afrom%5D=' + f.priceMin);
+        if (f.priceMax) p.push('search%5Bfilter_float_price%3Ato%5D=' + f.priceMax);
+        if (f.yearMin) p.push('search%5Bfilter_float_year%3Afrom%5D=' + f.yearMin);
+        if (auto) p.push('search%5Bfilter_enum_gearbox%5D=automatic');
+        u = 'https://www.autovit.ro/autoturisme' + (s ? '/' + s : '') + (p.length ? '?' + p.join('&') : '');
+      } else if (site === 'AutoScout24.ro' || site === 'AutoScout24.de') {
+        const host = site === 'AutoScout24.ro' ? 'www.autoscout24.ro' : 'www.autoscout24.de';
+        const p = [];
+        if (f.priceMin) p.push('pricefrom=' + f.priceMin);
+        if (f.priceMax) p.push('priceto=' + f.priceMax);
+        if (f.yearMin) p.push('fregfrom=' + f.yearMin);
+        if (f.hpMin) p.push('powerfrom=' + f.hpMin + '&powertype=hp');
+        if (auto) p.push('gear=A');
+        u = 'https://' + host + '/lst' + (s ? '/' + s : '') + (p.length ? '?' + p.join('&') : '');
+      } else if (site === 'mobile.de') {
+        const p = ['isSearchRequest=true'];
+        if (f.priceMin) p.push('minPrice=' + f.priceMin);
+        if (f.priceMax) p.push('maxPrice=' + f.priceMax);
+        if (f.yearMin) p.push('minFirstRegistrationDate=' + f.yearMin);
+        if (auto) p.push('transmissions=AUTOMATIC_GEAR');
+        u = 'https://suchen.mobile.de/fahrzeuge/search.html?' + p.join('&');
+      } else if (site === 'OLX.ro') {
+        u = 'https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/' + (s ? s + '/' : '');
+      } else if (site === 'Carvago') {
+        u = 'https://carvago.com/cars' + (s ? '?make=' + s : '');
+      } else if (site === 'Mobile.ro') {
+        u = 'https://www.mobile.ro/';
+      } else if (site === 'Auto1.com') {
+        u = 'https://www.auto1.com/';
+      }
+      if (u) urls.push({ site, brand: b, url: u });
+    }));
+    return urls;
+  }
+
+  parsePaste() {
+    const raw = this.state.pasteText || '';
+    if (!raw.trim()) return;
+    const t = raw.toLowerCase().replace(/\u00a0/g, ' ');
+    const num = m => m ? parseInt(String(m).replace(/[.\s,]/g, ''), 10) : null;
+    const f = { ...this.state.formData };
+
+    const urlMatch = raw.match(/https?:\/\/\S+/);
+    if (urlMatch) f.url = urlMatch[0];
+    const host = (f.url || '').toLowerCase();
+    if (host.includes('autovit')) f.sourceSite = 'Autovit.ro';
+    else if (host.includes('autoscout24.ro')) f.sourceSite = 'AutoScout24.ro';
+    else if (host.includes('autoscout24.de')) f.sourceSite = 'AutoScout24.de';
+    else if (host.includes('mobile.de')) f.sourceSite = 'mobile.de';
+    else if (host.includes('olx.ro')) f.sourceSite = 'OLX.ro';
+    else if (host.includes('carvago')) f.sourceSite = 'Carvago';
+    if (f.sourceSite === 'mobile.de' || f.sourceSite === 'AutoScout24.de') f.country = 'Germany';
+
+    const price = t.match(/(?:€|eur)\s*([\d.\s,]{3,12})/) || t.match(/([\d.\s,]{4,12})\s*(?:€|eur)/);
+    if (price) { const v = num(price[1]); if (v && v > 500 && v < 500000) f.price = String(v); }
+
+    const year = t.match(/\b(19[89]\d|20[0-4]\d)\b/);
+    if (year) f.year = year[1];
+
+    const km = t.match(/([\d.\s,]{3,12})\s*(?:km|kilometri|kilometer)/);
+    if (km) { const v = num(km[1]); if (v && v < 900000) f.mileage = String(v); }
+
+    const cc = t.match(/([\d.\s,]{3,6})\s*(?:cm3|cm³|ccm|cc\b)/);
+    if (cc) { const v = num(cc[1]); if (v && v > 600 && v < 8000) f.engineSize = String(v); }
+    else {
+      const litres = t.match(/\b([123]\.\d)\s*(?:l\b|tdi|tsi|tfsi|dci|crdi|hdi)/);
+      if (litres) f.engineSize = String(Math.round(parseFloat(litres[1]) * 1000));
+    }
+
+    const hp = t.match(/(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
+    if (hp) f.horsepower = hp[1];
+    else { const kw = t.match(/(\d{2,3})\s*kw\b/); if (kw) f.horsepower = String(Math.round(parseInt(kw[1]) * 1.36)); }
+
+    if (/\b(automat|automatic|automatik|dsg|s.tronic|tiptronic|dct|cutie automat)/.test(t)) f.transmission = 'Automatic';
+    else if (/\b(manual|manuala|manuală|schaltgetriebe)/.test(t)) f.transmission = 'Manual';
+
+    if (/\b(electric|elektro|ev)\b/.test(t) && !/hybrid/.test(t)) f.fuelType = 'Electric';
+    else if (/hybrid|hibrid/.test(t)) f.fuelType = 'Hybrid';
+    else if (/diesel|tdi|crdi|dci|hdi|motorina|motorină/.test(t)) f.fuelType = 'Diesel';
+    else if (/benzin|petrol|tsi|tfsi|gdi/.test(t)) f.fuelType = 'Petrol';
+
+    const brand = this.BRANDS.find(b => t.includes(b.toLowerCase()) || (b === 'Volkswagen' && /\bvw\b/.test(t)) || (b === 'Škoda' && /skoda/.test(t)) || (b === 'Mercedes-Benz' && /mercedes/.test(t)));
+    if (brand) f.brand = brand;
+
+    if (/f[aă]r[aă] accident|unfallfrei|accident.free|neaccidentat|nu a fost accidentat/.test(t)) f.accidentStatus = 'accident-free';
+    else if (/accidentat|unfallschaden|repaired damage|daune reparate/.test(t)) f.accidentStatus = 'repaired damage';
+
+    const featMap = {
+      rearCamera: /camer[aă] (?:video )?(?:spate|marsarier)|r[uü]ckfahrkamera|rear.?view camera|reversing camera/,
+      parkingSensors: /senzori (?:de )?parcare|parksensor|pdc|parking sensors/,
+      cruiseControl: /(?:tempomat|cruise control|adaptive cruise|acc\b)/,
+      heatedSeats: /scaune (?:încălzite|incalzite)|sitzheizung|heated seats/,
+      navigation: /naviga(?:tie|ție)|navigation|navi\b/,
+      carplay: /carplay|android auto/,
+      frontCamera: /camer[aă] 360|360.?(?:grade|°)|surround view/,
+      blindSpot: /unghi mort|blind spot|totwinkel/,
+      laneAssist: /lane assist|men(?:t|ț)inere (?:pe )?banda|spurhalte/,
+      ledMatrix: /matrix|led faruri|faruri led|led.?scheinwerfer|full led/,
+      panoramicRoof: /panoramic|panorama/,
+      towbar: /c[aâ]rlig|anh[aä]ngerkupplung|towbar/,
+      leatherSeats: /piele|leder|leather/,
+      electricSeats: /scaune electrice|elektrische sitze|power seats/,
+      heatedWheel: /volan (?:încălzit|incalzit)|lenkradheizung|heated steering/,
+      keyless: /keyless|acces f[aă]r[aă] cheie|schl[uü]ssellos/,
+      dualClimate: /clima(?:tronic)? (?:bi|dual|2).?zon|dual.?zone|2.zonen/,
+      powerTailgate: /haion electric|elektrische heckklappe|power tailgate/,
+      awd: /4motion|4x4|quattro|awd|allrad|4wd/,
+      headUp: /head.?up/,
+      trafficSign: /recunoa(?:s|ș)tere (?:indicatoare|semne)|verkehrszeichen|traffic sign/,
+      parkAssist: /asisten(?:t|ț)[aă] (?:la )?parcare|park assist|einparkhilfe automatisch/,
+    };
+    const found = Object.keys(featMap).filter(k => featMap[k].test(t));
+    if (found.length) f.features = Array.from(new Set([...f.features, ...found]));
+
+    const firstLine = raw.split('\n').map(x => x.trim()).find(x => x.length > 3 && !/^https?:/.test(x));
+    if (firstLine && !f.title) f.title = firstLine.slice(0, 90);
+
+    const filled = ['price', 'year', 'mileage', 'engineSize', 'horsepower'].filter(k => f[k]).length + found.length;
+    this.setState({ formData: f, pasteFeedback: filled ? filled + ' fields filled from the paste — check them before saving.' : 'Could not read much from that text. Fill the fields manually.' });
+  }
+
+  featuresText(features) { return features.map(k => (this.FEATURES.find(f => f.key === k) || {}).label).filter(Boolean).join(', ') || '—'; }
+
+  renderVals() {
+    const s = this.state;
+    const isMobile = s.windowWidth < 860;
+    let filtered = s.listings.filter(l => this.matchesFilters(l));
+    const dir = s.sortDir === 'asc' ? 1 : -1;
+    filtered = [...filtered].sort((a, b) => {
+      const av = a[s.sortKey] || 0, bv = b[s.sortKey] || 0;
+      return av > bv ? dir : av < bv ? -dir : 0;
+    });
+
+    const listings = filtered.map(l => {
+      const isSelected = s.selectedIds.includes(l.id);
+      const showLanded = l.country === 'Germany';
+      return {
+        ...l,
+        isSelected,
+        canSelect: isSelected || s.selectedIds.length < 3,
+        rowBg: isSelected ? this.ACCENT_SOFT : 'transparent',
+        starSymbol: l.shortlisted ? '★' : '☆',
+        starColor: l.shortlisted ? this.STAR : this.STAR_OFF,
+        priceFmt: '€' + l.price.toLocaleString(),
+        mileageFmt: l.mileage.toLocaleString() + ' km',
+        featuresText: this.featuresText(l.features),
+        showLanded,
+        landedCostFmt: '€' + this.landedCost(l).toLocaleString(),
+        landedCostDisplay: showLanded ? ('€' + this.landedCost(l).toLocaleString()) : '—',
+        accidentText: l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'Unknown'),
+        accidentColor: l.accidentFree === true ? 'oklch(0.45 0.12 145)' : 'oklch(0.55 0.16 45)',
+        onToggleShortlist: () => this.toggleShortlist(l.id),
+        onToggleSelect: () => this.toggleSelect(l.id),
+        onEdit: () => this.openEdit(l.id),
+        onDelete: () => this.deleteListing(l.id),
+      };
+    });
+
+    const brandFilterList = this.BRANDS.map(b => ({ name: b, checked: s.filters.brands.includes(b), onToggle: () => this.toggleBrandFilter(b) }));
+    const featureFilterList = this.FEATURES.map(ft => ({ ...ft, checked: s.filters.features.includes(ft.key), onToggle: () => this.toggleFeatureFilter(ft.key) }));
+    const formFeatureList = this.FEATURES.map(ft => ({ ...ft, checked: s.formData.features.includes(ft.key), onToggle: () => this.toggleFormFeature(ft.key) }));
+
+    const compareListings = s.selectedIds.map(id => s.listings.find(l => l.id === id)).filter(Boolean).map(l => ({
+      ...l,
+      priceFmt: '€' + l.price.toLocaleString(),
+      landedCostFmt: '€' + this.landedCost(l).toLocaleString(),
+      mileageFmt: l.mileage.toLocaleString() + ' km',
+      featuresText: this.featuresText(l.features),
+      accidentText: l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'Unknown'),
+      engineSizeText: l.engineSize + ' cm³',
+      horsepowerText: l.horsepower + ' hp',
+      onRemove: () => this.toggleSelect(l.id),
+    }));
+
+    const rowDefs = [
+      { label: 'Brand', key: 'brand' }, { label: 'Model', key: 'model' }, { label: 'Trim', key: 'trim' },
+      { label: 'Year', key: 'year' }, { label: 'Price', key: 'priceFmt' }, { label: 'Landed cost', key: 'landedCostFmt' },
+      { label: 'Mileage', key: 'mileageFmt' }, { label: 'Engine', key: 'engineSizeText' }, { label: 'Horsepower', key: 'horsepowerText' },
+      { label: 'Transmission', key: 'transmission' }, { label: 'Fuel', key: 'fuelType' }, { label: 'Features', key: 'featuresText' },
+      { label: 'Accident history', key: 'accidentText' },
+      { label: 'Source', key: 'sourceSite' }, { label: 'Market', key: 'country' },
+    ];
+    const compareRows = rowDefs.map(r => ({ label: r.label, values: compareListings.map(l => String(l[r.key] ?? '—')) }));
+    const compareGridColumns = '160px repeat(' + Math.max(compareListings.length, 1) + ', 1fr)';
+
+    const linkSites = ['Autovit.ro', 'AutoScout24.ro', 'AutoScout24.de', 'mobile.de'];
+    const chosen = (s.filters.sources || []).filter(x => linkSites.includes(x));
+    const quickLinks = (chosen.length ? chosen : linkSites).map(site => ({ label: site, url: this.buildQuickLink(site) }));
+
+    let recommendations = [];
+    if (filtered.length >= 2) {
+      const landeds = filtered.map(l => this.landedCost(l));
+      const ctx = {
+        minLanded: Math.min(...landeds), maxLanded: Math.max(...landeds),
+        minMileage: Math.min(...filtered.map(l => l.mileage)), maxMileage: Math.max(...filtered.map(l => l.mileage)),
+        minHp: Math.min(...filtered.map(l => l.horsepower)), maxHp: Math.max(...filtered.map(l => l.horsepower)),
+        maxYear: Math.max(...filtered.map(l => l.year)),
+      };
+      recommendations = filtered.map(l => {
+        const { score, reasons } = this.scoreListing(l, ctx);
+        return { id: l.id, title: l.title, score: Math.round(score), scoreText: Math.round(score) + '/100',
+          priceFmt: '€' + l.price.toLocaleString(), landedFmt: '€' + this.landedCost(l).toLocaleString(),
+          reasonText: reasons.length ? reasons.join(' · ') : 'meets all your filters',
+          url: l.url, onShortlist: () => this.toggleShortlist(l.id) };
+      }).sort((a, b) => b.score - a.score).slice(0, 3).map((r, i) => ({ ...r, rank: i + 1, badge: i === 0 ? 'Best match' : (i === 1 ? 'Runner-up' : 'Also worth a look') }));
+    }
+
+    const railQ = (s.railQuery || '').trim().toLowerCase();
+    const savedSearchList = s.savedSearches.filter(q => !railQ || q.name.toLowerCase().includes(railQ)).map(q => {
+      const active = q.id === s.activeSearchId;
+      const f = q.filters || {};
+      const brands = (f.brands || []);
+      const brandText = brands.length === 0 ? 'Any brand' : (brands.length <= 2 ? brands.join(' · ') : brands.slice(0, 2).join(' · ') + ' +' + (brands.length - 2));
+      const priceText = f.priceMin && f.priceMax
+        ? '€' + Number(f.priceMin).toLocaleString() + '–' + Number(f.priceMax).toLocaleString()
+        : f.priceMax ? 'up to €' + Number(f.priceMax).toLocaleString()
+        : f.priceMin ? 'from €' + Number(f.priceMin).toLocaleString()
+        : 'Any price';
+      const yearText = f.yearMin ? f.yearMin + '+' : 'Any year';
+      const count = s.listings.filter(l => this.matchesFilters(l, f)).length;
+      return {
+        id: q.id, name: q.name, isActive: active,
+        bg: active ? 'oklch(0.96 0.03 145)' : 'transparent',
+        border: active ? 'oklch(0.78 0.09 145)' : 'transparent',
+        nameColor: active ? 'oklch(0.28 0.07 145)' : 'oklch(0.25 0.01 90)',
+        barColor: active ? 'oklch(0.55 0.15 145)' : 'oklch(0.9 0.006 90)',
+        brandText, priceText, yearText,
+        countText: count === 1 ? '1 match' : count + ' matches',
+        onLoad: () => this.loadSearch(q.id),
+        onDelete: () => this.deleteSearch(q.id),
+      };
+    });
+
+    let chartPoints = [];
+    if (listings.length >= 2) {
+      const prices = listings.map(l => l.price), miles = listings.map(l => l.mileage);
+      const minP = Math.min(...prices), maxP = Math.max(...prices);
+      const minM = Math.min(...miles), maxM = Math.max(...miles);
+      const w = 400, h = 180, pad = 24;
+      chartPoints = listings.map(l => ({
+        x: maxM > minM ? pad + (l.mileage - minM) / (maxM - minM) * (w - 2 * pad) : w / 2,
+        y: maxP > minP ? h - pad - (l.price - minP) / (maxP - minP) * (h - 2 * pad) : h / 2,
+        r: l.shortlisted ? 6 : 4,
+        fill: l.shortlisted ? this.STAR : this.ACCENT,
+        label: l.title + ' · €' + l.price.toLocaleString() + ' · ' + l.mileage.toLocaleString() + ' km',
+      }));
+    }
+
+    const arrow = (key) => s.sortKey === key ? (s.sortDir === 'asc' ? '▲' : '▼') : '';
+    const uf = key => (e) => this.updateForm(key, e.target.value);
+
+    return {
+      isMobile,
+      listings,
+      mobileListings: isMobile ? listings : [],
+      tableListings: isMobile ? [] : listings,
+      resultCount: listings.length,
+      totalCount: s.listings.length,
+      shortlistOnly: s.shortlistOnly,
+      showFilters: s.showFilters,
+      filters: s.filters,
+      brandFilterList, featureFilterList, formFeatureList,
+      allBrands: this.BRANDS,
+      selectedBrands: s.filters.brands.map(b => ({ name: b, onRemove: () => this.toggleBrandFilter(b) })),
+      availableFeatures: this.FEATURES.filter(ft => !s.filters.features.includes(ft.key)),
+      selectedFeatures: s.filters.features.map(k => ({ label: (this.FEATURES.find(f => f.key === k) || {}).label || k, onRemove: () => this.toggleFeatureFilter(k) })),
+      featureSelectValue: '',
+      selectFeature: e => { const v = e.target.value; if (v) this.toggleFeatureFilter(v); },
+      availableSites: this.SITES.filter(site => !(s.filters.sources || []).includes(site)),
+      selectedSites: (s.filters.sources || []).map(site => ({ name: site, onRemove: () => this.toggleSourceFilter(site) })),
+      railOpen: s.railOpen,
+      railBackdrop: s.railOpen && isMobile,
+      railStyle: (isMobile
+        ? 'position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:30;box-shadow:0 8px 40px rgba(0,0,0,0.18);'
+        : 'position:sticky;top:72px;flex:0 0 272px;width:272px;height:calc(100vh - 72px);')
+        + 'background:#fff;border-right:1px solid oklch(0.9 0.006 90);padding:22px 18px;display:flex;flex-direction:column;gap:16px;overflow-y:auto',
+      toggleRail: () => this.setState(st => ({ railOpen: !st.railOpen })),
+      activeSearchLabel: (s.savedSearches.find(q => q.id === s.activeSearchId) || {}).name || 'Unsaved search',
+      recommendations, hasRecommendations: recommendations.length > 0,
+      savedSearchList, hasSavedSearches: s.savedSearches.length > 0,
+      savedCountLabel: s.savedSearches.length === 1 ? '1 saved' : s.savedSearches.length + ' saved',
+      showRailSearch: s.savedSearches.length >= 6,
+      railQuery: s.railQuery,
+      updateRailQuery: e => this.setState({ railQuery: e.target.value }),
+      railNoMatches: s.savedSearches.length > 0 && savedSearchList.length === 0,
+      searchName: s.searchName,
+      updateSearchName: e => this.setState({ searchName: e.target.value }),
+      saveSearch: () => this.saveSearch(),
+      updateSearch: () => this.updateSearch(),
+      hasActiveSearch: !!s.activeSearchId,
+      primarySearchLabel: s.activeSearchId ? 'Update search' : 'Search',
+      primarySearchAction: s.activeSearchId ? (() => this.updateSearch()) : (() => this.setState({ searchStatus: 'No results service connected yet. Once the search API from the handoff spec is live, this button queries the selected sites with these criteria and fills the table below.' })),
+      saveLabel: s.activeSearchId ? 'Save as new' : 'Save search',
+      runSearch: () => this.setState({ searchStatus: 'No results service connected yet. Once the search API from the handoff spec is live, this button queries the selected sites with these criteria and fills the table below.' }),
+      searchStatus: s.searchStatus,
+      hasSearchStatus: !!s.searchStatus,
+      pasteText: s.pasteText,
+      pasteFeedback: s.pasteFeedback,
+      hasPasteFeedback: !!s.pasteFeedback,
+      updatePasteText: e => this.setState({ pasteText: e.target.value }),
+      parsePaste: () => this.parsePaste(),
+      newSearch: () => this.newSearch(),
+      accidentFreeOnly: s.filters.accidentFree,
+      accFreeBg: 'transparent',
+      accFreeBorder: 'transparent',
+      accFreeColor: s.filters.accidentFree ? 'oklch(0.34 0.09 145)' : 'oklch(0.5 0.01 90)',
+      accFreeTrack: s.filters.accidentFree ? 'oklch(0.55 0.15 145)' : 'oklch(0.85 0.006 90)',
+      accFreeKnob: s.filters.accidentFree ? '14px' : '2px',
+      toggleAccidentFree: () => this.toggleAccidentFree(),
+      updateFormAccidentStatus: e => this.updateForm('accidentStatus', e.target.value),
+      siteSelectValue: '',
+      selectSite: e => { const v = e.target.value; if (v) this.toggleSourceFilter(v); },
+      allSitesActive: !(s.filters.sources || []).length,
+      formData: s.formData,
+      isAddOpen: s.isAddOpen, isEdit: !!s.editId,
+      isCompareOpen: s.isCompareOpen, compareListings, compareRows, compareGridColumns,
+      canCompare: s.selectedIds.length >= 2,
+      selectedCount: s.selectedIds.length,
+      transportEstimate: s.transportEstimate, rarFees: s.rarFees,
+      quickLinks,
+      hasListings: listings.length > 0, noListingsAtAll: s.listings.length === 0,
+      hasChart: chartPoints.length > 0, chartPoints,
+      yearSortArrow: arrow('year'), priceSortArrow: arrow('price'), mileageSortArrow: arrow('mileage'), hpSortArrow: arrow('horsepower'),
+      brandSelectValue: '',
+      selectBrand: e => { const v = e.target.value; if (v) this.setState(st => st.filters.brands.includes(v) ? {} : { filters: { ...st.filters, brands: [...st.filters.brands, v] } }); },
+      toggleShowFilters: () => this.toggleShowFilters(),
+      toggleShortlistOnly: () => this.toggleShortlistOnly(),
+      resetFilters: () => this.resetFilters(),
+      updateModel: e => this.updateFilter('model', e.target.value),
+      updatePriceMin: e => this.updateFilter('priceMin', e.target.value),
+      updatePriceMax: e => this.updateFilter('priceMax', e.target.value),
+      updateYearMin: e => this.updateFilter('yearMin', e.target.value),
+      updateYearMax: e => this.updateFilter('yearMax', e.target.value),
+      updateEngineMax: e => this.updateFilter('engineMax', e.target.value),
+      updateHpMin: e => this.updateFilter('hpMin', e.target.value),
+      updateTransmission: e => this.updateFilter('transmission', e.target.value),
+      updateCountry: e => this.updateFilter('country', e.target.value),
+      sortByPrice: () => this.sortBy('price'),
+      sortByYear: () => this.sortBy('year'),
+      sortByMileage: () => this.sortBy('mileage'),
+      sortByHp: () => this.sortBy('horsepower'),
+      openAdd: () => this.openAdd(),
+      closeModal: () => this.closeModal(),
+      saveListing: () => this.saveListing(),
+      openCompare: () => this.openCompare(),
+      closeCompare: () => this.closeCompare(),
+      updateFormTitle: uf('title'), updateFormBrand: uf('brand'), updateFormModel: uf('model'), updateFormTrim: uf('trim'),
+      updateFormYear: uf('year'), updateFormPrice: uf('price'), updateFormMileage: uf('mileage'), updateFormEngineSize: uf('engineSize'),
+      updateFormHorsepower: uf('horsepower'), updateFormTransmission: uf('transmission'), updateFormFuelType: uf('fuelType'),
+      updateFormSourceSite: uf('sourceSite'), updateFormUrl: uf('url'), updateFormCountry: uf('country'),
+      updateTransport: e => this.setState({ transportEstimate: e.target.value }),
+      updateRar: e => this.setState({ rarFees: e.target.value }),
+    };
+  }
+}
+</script>
+</body>
+</html>

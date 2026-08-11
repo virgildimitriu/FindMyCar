@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="Search Romanian and German car portals against your criteria and keep the matches in one place.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Find My Car">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Find My Car</title>
+<style>
+:root{
+  --bg:oklch(0.98 0.006 90);
+  --surface:#fff;
+  --text:oklch(0.2 0.01 90);
+  --text-2:oklch(0.45 0.01 90);
+  --text-3:oklch(0.55 0.01 90);
+  --text-4:oklch(0.62 0.01 90);
+  --line:oklch(0.9 0.006 90);
+  --line-2:oklch(0.94 0.006 90);
+  --line-3:oklch(0.88 0.006 90);
+  --accent:oklch(0.55 0.15 145);
+  --accent-dark:oklch(0.48 0.15 145);
+  --accent-deep:oklch(0.34 0.09 145);
+  --accent-soft:oklch(0.95 0.04 145);
+  --accent-line:oklch(0.88 0.05 145);
+  --star:oklch(0.68 0.15 85);
+  --star-off:oklch(0.8 0.006 90);
+  --danger:oklch(0.55 0.18 25);
+  --danger-line:oklch(0.9 0.1 25);
+  --warn-bg:oklch(0.97 0.03 85);
+  --warn-line:oklch(0.9 0.05 85);
+  --warn-text:oklch(0.45 0.06 60);
+  --mono:'Space Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:'Work Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.45;
+  overscroll-behavior-y:none;
+}
+::placeholder{color:var(--text-4)}
+button{font-family:inherit;font-size:inherit;color:inherit}
+input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
+a{color:var(--accent-dark)}
+.mono{font-family:var(--mono)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- app frame ---------- */
+.hdr{
+  position:sticky;top:0;z-index:20;background:var(--surface);
+  border-bottom:1px solid var(--line);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+  display:flex;align-items:center;gap:12px;
+}
+.hdr h1{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:0;line-height:1.15}
+.hdr .sub{font-size:12px;color:var(--text-3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+.icon-btn{
+  background:none;border:1px solid var(--line-3);width:42px;height:42px;border-radius:10px;
+  font-size:16px;cursor:pointer;color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.icon-btn:hover{background:oklch(0.97 0.006 90)}
+.shell{display:flex;align-items:flex-start}
+.main{flex:1;min-width:0;max-width:1180px;margin:0 auto;width:100%;
+  padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:14px}
+.card-h{font-size:15px;font-weight:600}
+.muted{color:var(--text-3)}
+.tiny{font-size:12px;color:var(--text-4)}
+.sec-label{font-size:11.5px;font-weight:700;color:oklch(0.5 0.01 90);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+
+/* ---------- controls ---------- */
+.field{display:block;margin-bottom:5px;font-size:12.5px;color:oklch(0.5 0.01 90)}
+input[type=text],input[type=number],input[type=url],select,textarea{
+  width:100%;padding:11px 10px;border:1px solid var(--line-3);border-radius:8px;
+  background:var(--surface);
+}
+input[type=number],.num{font-family:var(--mono)}
+textarea{resize:vertical;line-height:1.5}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{
+  outline:2px solid var(--accent);outline-offset:1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.btn{
+  border:1px solid var(--line-3);background:var(--surface);color:var(--text-2);
+  padding:11px 14px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;
+  min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn:hover{background:oklch(0.97 0.006 90)}
+.btn-primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-dark{background:var(--text);color:#fff;border-color:transparent}
+.btn-dark:hover{background:#000}
+.btn-sm{padding:7px 11px;min-height:36px;font-size:12.5px;font-weight:500}
+.btn-danger{border-color:var(--danger-line);color:var(--danger)}
+.btn-danger:hover{background:oklch(0.97 0.03 25)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);
+  border:1px solid var(--accent-line);color:var(--accent-deep);
+  padding:6px 8px 6px 12px;border-radius:20px;font-size:13px;
+}
+.chip button{background:none;border:none;color:oklch(0.45 0.06 145);font-size:16px;
+  line-height:1;cursor:pointer;padding:2px 4px;min-width:26px;min-height:26px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chips:empty{display:none}
+.toggle{display:inline-flex;align-items:center;gap:10px;background:none;border:none;
+  padding:8px 0;cursor:pointer;font-size:14.5px;font-weight:500;text-align:left}
+.track{width:34px;height:20px;border-radius:10px;background:var(--star-off);
+  position:relative;flex:0 0 auto;transition:background .15s}
+.track i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s}
+.toggle[aria-pressed=true] .track{background:var(--accent)}
+.toggle[aria-pressed=true] .track i{left:16px}
+.toggle[aria-pressed=true]{color:var(--accent-deep)}
+.note{font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);
+  border:1px solid var(--warn-line);border-radius:8px;padding:10px 12px;margin-top:10px}
+
+/* ---------- drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(20,20,18,.45);z-index:29}
+.rail{
+  background:var(--surface);border-right:1px solid var(--line);
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:14px;overflow-y:auto;
+}
+.rail.drawer{position:fixed;top:0;left:0;bottom:0;width:300px;max-width:86vw;z-index:30;
+  box-shadow:0 8px 40px rgba(0,0,0,.18);padding-top:calc(18px + env(safe-area-inset-top))}
+.rail.docked{position:sticky;top:64px;flex:0 0 268px;width:268px;height:calc(100dvh - 64px)}
+.q{display:flex;align-items:stretch;gap:10px;border:1px solid transparent;
+  border-radius:10px;padding:10px 8px 10px 0}
+.q:hover{background:oklch(0.97 0.006 90)}
+.q.on{background:oklch(0.96 0.03 145);border-color:oklch(0.78 0.09 145)}
+.q .bar{flex:0 0 3px;border-radius:3px;background:var(--line)}
+.q.on .bar{background:var(--accent)}
+.q .load{background:none;border:none;padding:0;text-align:left;width:100%;cursor:pointer;min-width:0}
+.q .nm{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q.on .nm{color:var(--accent-deep)}
+.q .meta{font-size:11.5px;color:var(--text-3);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q .cnt{font-size:11px;color:oklch(0.45 0.1 145);margin-top:5px;font-weight:600}
+.q .del{background:none;border:none;color:oklch(0.7 0.01 90);font-size:16px;line-height:1;
+  cursor:pointer;align-self:flex-start;padding:2px 4px;min-width:28px;min-height:28px}
+.q .del:hover{color:var(--danger)}
+
+/* ---------- search links ---------- */
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.link{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--line);border-radius:10px;padding:13px 14px;
+  text-decoration:none;color:var(--text);background:var(--surface);min-height:52px}
+.link:hover{border-color:var(--accent-line);background:var(--accent-soft)}
+.link .nm{font-weight:600;font-size:13.5px}
+.link .sub{font-size:11.5px;color:var(--text-4);margin-top:2px}
+.link .go{color:var(--accent-dark);font-size:16px;flex:0 0 auto}
+
+/* ---------- results ---------- */
+.bar-row{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.empty{background:var(--surface);border:1px dashed var(--line-3);border-radius:var(--radius);
+  padding:36px 20px;text-align:center;color:var(--text-3)}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-bottom:10px;display:flex;flex-direction:column;gap:7px}
+.item.on{background:var(--accent-soft);border-color:var(--accent-line)}
+.item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.item .ttl{font-size:15px;font-weight:600;line-height:1.3}
+.item .price{font-size:19px;font-weight:700;font-family:var(--mono)}
+.item .foot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-top:1px solid var(--line-2);padding-top:10px;margin-top:2px;flex-wrap:wrap}
+.star{background:none;border:none;font-size:22px;cursor:pointer;line-height:1;
+  padding:2px 4px;color:var(--star-off);min-width:34px;min-height:34px}
+.star.on{color:var(--star)}
+.ok{color:oklch(0.45 0.12 145)}
+.warnc{color:oklch(0.55 0.16 45)}
+.pick{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-3);cursor:pointer}
+.pick input{width:20px;height:20px;accent-color:var(--accent)}
+.tbl-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:1040px}
+thead tr{text-align:left;border-bottom:2px solid var(--line)}
+th{padding:12px 8px;font-weight:600;white-space:nowrap}
+th.sort{cursor:pointer;user-select:none}
+th.sort:hover{color:var(--accent-dark)}
+td{padding:10px 8px;vertical-align:top}
+tbody tr{border-bottom:1px solid var(--line-2)}
+tbody tr.on{background:var(--accent-soft)}
+
+/* ---------- recommendations ---------- */
+.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.rec{border:1px solid var(--line-2);border-radius:10px;padding:13px;
+  display:flex;flex-direction:column;gap:6px}
+.rec .badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:oklch(0.42 0.14 145)}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(20,20,18,.45);z-index:50;
+  display:flex;align-items:center;justify-content:center;padding:0}
+.sheet{background:var(--surface);width:100%;max-width:760px;max-height:100dvh;
+  overflow-y:auto;border-radius:0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-bottom:14px;position:sticky;top:-18px;background:var(--surface);
+  padding:6px 0 10px;border-bottom:1px solid var(--line-2);z-index:1}
+.sheet-h .t{font-size:17px;font-weight:700}
+.x{background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-3);
+  line-height:1;padding:4px 8px;min-width:40px;min-height:40px}
+.cmp-row{display:grid;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.cmp-lbl{font-size:12.5px;font-weight:600;color:oklch(0.5 0.01 90)}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:25;
+  background:var(--accent);color:#fff;border:none;border-radius:28px;
+  padding:0 20px;height:56px;font-size:15px;font-weight:600;cursor:pointer;
+  box-shadow:0 6px 20px rgba(0,0,0,.22);display:flex;align-items:center;gap:8px}
+.fab:hover{background:var(--accent-dark)}
+
+@media (min-width:860px){
+  body{font-size:15px}
+  .hdr{padding:14px 24px}
+  .hdr h1{font-size:22px}
+  .main{padding:20px 24px 60px}
+  .card{padding:20px 22px}
+  .modal{padding:20px}
+  .sheet{border-radius:14px;max-height:88vh;padding:24px}
+  .sheet-h{top:-24px}
+  input,select,textarea{font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+(function () {
+
+/* =====================================================================
+   Reference data
+   ===================================================================== */
+
+var BRANDS = ['Audi','BMW','Citroën','Cupra','Dacia','Fiat','Ford','Honda','Hyundai','Kia',
+  'Mazda','Mercedes-Benz','Nissan','Opel','Peugeot','Renault','Seat','Škoda','Suzuki',
+  'Toyota','Volkswagen','Volvo'];
+
+var FEATURES = [
+  { key:'rearCamera',     label:'Rear camera' },
+  { key:'parkingSensors', label:'Parking sensors' },
+  { key:'cruiseControl',  label:'Cruise control / adaptive' },
+  { key:'heatedSeats',    label:'Heated seats' },
+  { key:'navigation',     label:'Navigation' },
+  { key:'carplay',        label:'CarPlay / Android Auto' },
+  { key:'frontCamera',    label:'Front camera / 360° view' },
+  { key:'blindSpot',      label:'Blind spot monitor' },
+  { key:'laneAssist',     label:'Lane keep assist' },
+  { key:'ledMatrix',      label:'LED / matrix headlights' },
+  { key:'panoramicRoof',  label:'Panoramic roof' },
+  { key:'towbar',         label:'Towbar' },
+  { key:'leatherSeats',   label:'Leather upholstery' },
+  { key:'electricSeats',  label:'Electric seats' },
+  { key:'heatedWheel',    label:'Heated steering wheel' },
+  { key:'keyless',        label:'Keyless entry / start' },
+  { key:'dualClimate',    label:'Dual-zone climate' },
+  { key:'powerTailgate',  label:'Electric tailgate' },
+  { key:'awd',            label:'All-wheel drive' },
+  { key:'headUp',         label:'Head-up display' },
+  { key:'trafficSign',    label:'Traffic sign recognition' },
+  { key:'parkAssist',     label:'Automatic parking assist' }
+];
+
+var SITES = ['Autovit.ro','AutoScout24.ro','AutoScout24.de','mobile.de','OLX.ro','Carvago'];
+var GERMAN_SITES = { 'AutoScout24.de':1, 'mobile.de':1 };
+
+var LS_SEARCHES = 'findmycar_searches_v1';
+var LS_LISTINGS = 'findmycar_listings_v1';
+var LS_PREFS    = 'findmycar_prefs_v1';
+
+/* =====================================================================
+   State
+   ===================================================================== */
+
+function blankFilters() {
+  return { brands:[], model:'', priceMin:'', priceMax:'', yearMin:'', engineMax:'',
+    hpMin:'', transmission:'Either', features:[], country:'both',
+    accidentFree:false, sources:[] };
+}
+function defaultFilters() {
+  return { brands:['Volkswagen','Škoda','Kia'], model:'', priceMin:14000, priceMax:20000,
+    yearMin:2023, engineMax:2000, hpMin:150, transmission:'Automatic',
+    features:['rearCamera'], country:'both', accidentFree:true, sources:[] };
+}
+function blankForm() {
+  return { title:'', brand:'Volkswagen', model:'', trim:'', year:'', price:'', mileage:'',
+    engineSize:'', horsepower:'', transmission:'Automatic', fuelType:'Petrol', features:[],
+    sourceSite:'Autovit.ro', url:'', country:'Romania', accidentStatus:'accident-free' };
+}
+
+var S = {
+  listings: [],
+  filters: defaultFilters(),
+  savedSearches: [],
+  activeSearchId: null,
+  searchName: '',
+  railOpen: false,
+  railQuery: '',
+  showFilters: true,
+  showLinks: false,
+  shortlistOnly: false,
+  sortKey: 'price',
+  sortDir: 'asc',
+  selectedIds: [],
+  isAddOpen: false,
+  isCompareOpen: false,
+  editId: null,
+  formData: blankForm(),
+  pasteText: '',
+  pasteFeedback: '',
+  transportEstimate: 450,
+  rarFees: 800,
+  width: window.innerWidth
+};
+
+function isMobile() { return S.width < 860; }
+
+function readJSON(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+}
+function writeJSON(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+}
+function persistListings() { writeJSON(LS_LISTINGS, S.listings); }
+function persistSearches() { writeJSON(LS_SEARCHES, S.savedSearches); }
+function persistPrefs() {
+  writeJSON(LS_PREFS, { transportEstimate:S.transportEstimate, rarFees:S.rarFees });
+}
+
+function load() {
+  var qs = readJSON(LS_SEARCHES);
+  if (qs && qs.length) S.savedSearches = qs;
+
+  var saved = readJSON(LS_LISTINGS);
+  if (saved && saved.length) {
+    S.listings = saved.map(function (l) {
+      if (l.accidentStatus) return l;
+      var c = Object.assign({}, l);
+      c.accidentStatus = l.accidentFree === true ? 'accident-free' : 'unknown';
+      c.accidentFree = l.accidentFree === true;
+      return c;
+    });
+  }
+  var prefs = readJSON(LS_PREFS);
+  if (prefs) {
+    if (prefs.transportEstimate != null) S.transportEstimate = prefs.transportEstimate;
+    if (prefs.rarFees != null) S.rarFees = prefs.rarFees;
+  }
+  S.railOpen = window.innerWidth >= 860;
+}
+
+/* =====================================================================
+   Domain logic
+   ===================================================================== */
+
+function landedCost(l) {
+  if (l.country !== 'Germany') return l.price;
+  return l.price + (Number(S.transportEstimate) || 0) + (Number(S.rarFees) || 0);
+}
+
+function matchesFilters(l, filters) {
+  var f = filters || S.filters;
+  if (f.brands.length && f.brands.indexOf(l.brand) === -1) return false;
+  if (f.model && (l.model || '').toLowerCase().indexOf(f.model.toLowerCase()) === -1) return false;
+  if (f.priceMin !== '' && f.priceMin != null && l.price < Number(f.priceMin)) return false;
+  if (f.priceMax !== '' && f.priceMax != null && l.price > Number(f.priceMax)) return false;
+  if (f.yearMin !== '' && f.yearMin != null && l.year < Number(f.yearMin)) return false;
+  if (f.engineMax !== '' && f.engineMax != null && l.engineSize > Number(f.engineMax)) return false;
+  if (f.hpMin !== '' && f.hpMin != null && l.horsepower < Number(f.hpMin)) return false;
+  if (f.transmission !== 'Either' && l.transmission !== f.transmission) return false;
+  if (f.features.length && !f.features.every(function (k) {
+    return (l.features || []).indexOf(k) !== -1; })) return false;
+  if (f.country !== 'both' && l.country !== f.country) return false;
+  if ((f.sources || []).length && f.sources.indexOf(l.sourceSite) === -1) return false;
+  if (f.accidentFree && l.accidentFree !== true) return false;
+  if (!filters && S.shortlistOnly && !l.shortlisted) return false;
+  return true;
+}
+
+function scoreListing(l, ctx) {
+  var reasons = [], score = 0, rel;
+  if (ctx.maxLanded > ctx.minLanded) {
+    rel = 1 - (landedCost(l) - ctx.minLanded) / (ctx.maxLanded - ctx.minLanded);
+    score += rel * 40;
+    if (rel > 0.66) reasons.push('lowest landed cost in the set');
+  }
+  if (ctx.maxMileage > ctx.minMileage) {
+    rel = 1 - (l.mileage - ctx.minMileage) / (ctx.maxMileage - ctx.minMileage);
+    score += rel * 25;
+    if (rel > 0.66) reasons.push('low mileage');
+  }
+  if (ctx.maxHp > ctx.minHp) {
+    rel = (l.horsepower - ctx.minHp) / (ctx.maxHp - ctx.minHp);
+    score += rel * 15;
+    if (rel > 0.66) reasons.push(l.horsepower + ' hp');
+  }
+  score += ((l.features || []).length / FEATURES.length) * 15;
+  if ((l.features || []).length >= 5) reasons.push(l.features.length + ' equipment items');
+  if (l.year >= ctx.maxYear) { score += 5; reasons.push('newest year in the set'); }
+  if (l.accidentFree === true) reasons.push('declared accident-free');
+  return { score: score, reasons: reasons };
+}
+
+function brandSlug(b) {
+  return b.toLowerCase()
+    .replace(/š/g, 's').replace(/ë/g, 'e').replace(/ç/g, 'c')
+    .replace(/é|è/g, 'e').replace(/\s+/g, '-');
+}
+
+/* Build pre-filtered search URLs for each selected portal.
+   Brand goes in the path where the portal supports it; mobile.de needs numeric
+   make ids we do not maintain, so its link carries only the numeric filters. */
+function searchUrls() {
+  var f = S.filters;
+  var sites = (f.sources || []).length ? f.sources : SITES;
+  var brands = f.brands.length ? f.brands : [''];
+  var auto = f.transmission === 'Automatic';
+  var out = [];
+
+  sites.forEach(function (site) {
+    if (f.country === 'Romania' && GERMAN_SITES[site]) return;
+    if (f.country === 'Germany' && (site === 'Autovit.ro' || site === 'OLX.ro' ||
+        site === 'AutoScout24.ro')) return;
+
+    var perBrand = site === 'mobile.de' ? [''] : brands;
+
+    perBrand.forEach(function (b) {
+      var s = b ? brandSlug(b) : '', p = [], u = '';
+
+      if (site === 'Autovit.ro') {
+        if (f.priceMin) p.push('search%5Bfilter_float_price%3Afrom%5D=' + f.priceMin);
+        if (f.priceMax) p.push('search%5Bfilter_float_price%3Ato%5D=' + f.priceMax);
+        if (f.yearMin)  p.push('search%5Bfilter_float_year%3Afrom%5D=' + f.yearMin);
+        if (f.hpMin)    p.push('search%5Bfilter_float_engine_power%3Afrom%5D=' + f.hpMin);
+        if (f.engineMax) p.push('search%5Bfilter_float_engine_capacity%3Ato%5D=' + f.engineMax);
+        if (auto)       p.push('search%5Bfilter_enum_gearbox%5D=automatic');
+        u = 'https://www.autovit.ro/autoturisme' + (s ? '/' + s : '') +
+            (p.length ? '?' + p.join('&') : '');
+
+      } else if (site === 'AutoScout24.ro' || site === 'AutoScout24.de') {
+        var host = site === 'AutoScout24.ro' ? 'www.autoscout24.ro' : 'www.autoscout24.de';
+        if (f.priceMin) p.push('pricefrom=' + f.priceMin);
+        if (f.priceMax) p.push('priceto=' + f.priceMax);
+        if (f.yearMin)  p.push('fregfrom=' + f.yearMin);
+        if (f.hpMin)    p.push('powerfrom=' + f.hpMin, 'powertype=hp');
+        if (auto)       p.push('gear=A');
+        p.push('sort=price', 'desc=0');
+        u = 'https://' + host + '/lst' + (s ? '/' + s : '') + '?' + p.join('&');
+
+      } else if (site === 'mobile.de') {
+        p.push('isSearchRequest=true', 'scopeId=C');
+        if (f.priceMin) p.push('minPrice=' + f.priceMin);
+        if (f.priceMax) p.push('maxPrice=' + f.priceMax);
+        if (f.yearMin)  p.push('minFirstRegistrationDate=' + f.yearMin + '-01-01');
+        if (f.hpMin)    p.push('minPowerAsArray=HP', 'minPower=' + f.hpMin);
+        if (auto)       p.push('transmissions=AUTOMATIC_GEAR');
+        u = 'https://suchen.mobile.de/fahrzeuge/search.html?' + p.join('&');
+
+      } else if (site === 'OLX.ro') {
+        u = 'https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/' + (s ? s + '/' : '');
+        var op = [];
+        if (f.priceMin) op.push('search%5Bfilter_float_price%3Afrom%5D=' + f.priceMin);
+        if (f.priceMax) op.push('search%5Bfilter_float_price%3Ato%5D=' + f.priceMax);
+        if (f.yearMin)  op.push('search%5Bfilter_float_year%3Afrom%5D=' + f.yearMin);
+        if (op.length) u += '?' + op.join('&');
+
+      } else if (site === 'Carvago') {
+        u = 'https://carvago.com/cars' + (s ? '?make=' + s : '');
+      }
+
+      if (u) out.push({
+        site: site,
+        brand: b,
+        url: u,
+        note: site === 'mobile.de' ? 'price / year / gearbox — pick brand on site'
+            : (b ? b : 'all brands')
+      });
+    });
+  });
+  return out;
+}
+
+/* ---- paste parser: pull structured fields out of a copied listing ---- */
+function parsePaste() {
+  var raw = S.pasteText || '';
+  if (!raw.trim()) return;
+  var t = raw.toLowerCase().replace(/ /g, ' ');
+  var f = Object.assign({}, S.formData);
+  var num = function (m) { return m ? parseInt(String(m).replace(/[.\s,]/g, ''), 10) : null; };
+  var v;
+
+  var urlMatch = raw.match(/https?:\/\/\S+/);
+  if (urlMatch) f.url = urlMatch[0];
+  var host = (f.url || '').toLowerCase();
+  if (host.indexOf('autovit') > -1) f.sourceSite = 'Autovit.ro';
+  else if (host.indexOf('autoscout24.ro') > -1) f.sourceSite = 'AutoScout24.ro';
+  else if (host.indexOf('autoscout24.de') > -1) f.sourceSite = 'AutoScout24.de';
+  else if (host.indexOf('mobile.de') > -1) f.sourceSite = 'mobile.de';
+  else if (host.indexOf('olx.ro') > -1) f.sourceSite = 'OLX.ro';
+  else if (host.indexOf('carvago') > -1) f.sourceSite = 'Carvago';
+  f.country = GERMAN_SITES[f.sourceSite] ? 'Germany' : 'Romania';
+
+  /* Grouped-with-separator number (18.000 / 18,000 / 18 000) or a bare 4-7 digit
+     run. Deliberately does NOT allow a loose run of digits/separators, otherwise
+     it can swallow digits from an unrelated earlier number (e.g. the year)
+     across a comma and produce a bogus oversized value. */
+  var NUM = '(\\d{1,3}(?:[.,\\s]\\d{3})+|\\d{4,7}|\\d{1,3})';
+
+  var price = t.match(new RegExp('(?:€|eur)\\s*' + NUM)) || t.match(new RegExp(NUM + '\\s*(?:€|eur)'));
+  if (price) { v = num(price[1]); if (v && v > 500 && v < 500000) f.price = String(v); }
+
+  var year = t.match(/\b(19[89]\d|20[0-4]\d)\b/);
+  if (year) f.year = year[1];
+
+  var km = t.match(new RegExp(NUM + '\\s*(?:km|kilometri|kilometer)'));
+  if (km) { v = num(km[1]); if (v && v < 900000) f.mileage = String(v); }
+
+  var cc = t.match(new RegExp(NUM + '\\s*(?:cm3|cm³|ccm|cc\\b)'));
+  if (cc) { v = num(cc[1]); if (v && v > 600 && v < 8000) f.engineSize = String(v); }
+  else {
+    var litres = t.match(/\b([123][.,]\d)\s*(?:l\b|tdi|tsi|tfsi|dci|crdi|hdi)/);
+    if (litres) f.engineSize = String(Math.round(parseFloat(litres[1].replace(',', '.')) * 1000));
+  }
+
+  var hp = t.match(/(\d{2,3})\s*(?:cp|hp|ps|bhp)\b/);
+  if (hp) f.horsepower = hp[1];
+  else { var kw = t.match(/(\d{2,3})\s*kw\b/); if (kw) f.horsepower = String(Math.round(parseInt(kw[1], 10) * 1.36)); }
+
+  if (/\b(automat|automatic|automatik|dsg|s.tronic|tiptronic|dct|cutie automat)/.test(t)) f.transmission = 'Automatic';
+  else if (/\b(manual|manuala|manuală|schaltgetriebe)/.test(t)) f.transmission = 'Manual';
+
+  if (/\b(electric|elektro|ev)\b/.test(t) && !/hybrid|hibrid/.test(t)) f.fuelType = 'Electric';
+  else if (/hybrid|hibrid/.test(t)) f.fuelType = 'Hybrid';
+  else if (/diesel|tdi|crdi|dci|hdi|motorina|motorină/.test(t)) f.fuelType = 'Diesel';
+  else if (/benzin|petrol|tsi|tfsi|gdi/.test(t)) f.fuelType = 'Petrol';
+
+  var brand = BRANDS.find(function (b) {
+    return t.indexOf(b.toLowerCase()) > -1 ||
+      (b === 'Volkswagen' && /\bvw\b/.test(t)) ||
+      (b === 'Škoda' && /skoda/.test(t)) ||
+      (b === 'Mercedes-Benz' && /mercedes/.test(t));
+  });
+  if (brand) f.brand = brand;
+
+  if (/f[aă]r[aă] accident|unfallfrei|accident.free|neaccidentat|nu a fost accidentat/.test(t)) f.accidentStatus = 'accident-free';
+  else if (/accidentat|unfallschaden|repaired damage|daune reparate/.test(t)) f.accidentStatus = 'repaired damage';
+  else f.accidentStatus = 'unknown';
+
+  var featMap = {
+    rearCamera: /camer[aă] (?:video )?(?:spate|marsarier)|r[uü]ckfahrkamera|rear.?view camera|reversing camera/,
+    parkingSensors: /senzori (?:de )?parcare|parksensor|pdc|parking sensors/,
+    cruiseControl: /(?:tempomat|cruise control|adaptive cruise|acc\b)/,
+    heatedSeats: /scaune (?:încălzite|incalzite)|sitzheizung|heated seats/,
+    navigation: /naviga(?:tie|ție)|navigation|navi\b/,
+    carplay: /carplay|android auto/,
+    frontCamera: /camer[aă] 360|360.?(?:grade|°)|surround view/,
+    blindSpot: /unghi mort|blind spot|totwinkel/,
+    laneAssist: /lane assist|men(?:t|ț)inere (?:pe )?banda|spurhalte/,
+    ledMatrix: /matrix|led faruri|faruri led|led.?scheinwerfer|full led/,
+    panoramicRoof: /panoramic|panorama/,
+    towbar: /c[aâ]rlig|anh[aä]ngerkupplung|towbar/,
+    leatherSeats: /piele|leder|leather/,
+    electricSeats: /scaune electrice|elektrische sitze|power seats/,
+    heatedWheel: /volan (?:încălzit|incalzit)|lenkradheizung|heated steering/,
+    keyless: /keyless|acces f[aă]r[aă] cheie|schl[uü]ssellos/,
+    dualClimate: /clima(?:tronic)? (?:bi|dual|2).?zon|dual.?zone|2.zonen/,
+    powerTailgate: /haion electric|elektrische heckklappe|power tailgate/,
+    awd: /4motion|4x4|quattro|awd|allrad|4wd/,
+    headUp: /head.?up/,
+    trafficSign: /recunoa(?:s|ș)tere (?:indicatoare|semne)|verkehrszeichen|traffic sign/,
+    parkAssist: /asisten(?:t|ț)[aă] (?:la )?parcare|park assist|einparkhilfe automatisch/
+  };
+  var found = Object.keys(featMap).filter(function (k) { return featMap[k].test(t); });
+  if (found.length) {
+    var set = {};
+    f.features.concat(found).forEach(function (k) { set[k] = 1; });
+    f.features = Object.keys(set);
+  }
+
+  var firstLine = raw.split('\n').map(function (x) { return x.trim(); })
+    .find(function (x) { return x.length > 3 && !/^https?:/.test(x); });
+  if (firstLine && !f.title) f.title = firstLine.slice(0, 90);
+
+  var filled = ['price','year','mileage','engineSize','horsepower']
+    .filter(function (k) { return f[k]; }).length + found.length;
+
+  S.formData = f;
+  S.pasteFeedback = filled
+    ? filled + ' fields filled from the paste — check them before saving.'
+    : 'Could not read much from that text. Fill the fields in manually.';
+  render();
+}
+
+function saveListing() {
+  var f = S.formData;
+  if (!f.title.trim() || !f.price || !f.year) {
+    S.pasteFeedback = 'Title, price and year are required.';
+    render();
+    return;
+  }
+  var rec = {
+    id: S.editId || ('l' + Date.now()),
+    title: f.title.trim(),
+    brand: f.brand,
+    model: (f.model || '').trim(),
+    trim: (f.trim || '').trim(),
+    year: parseInt(f.year, 10) || 0,
+    price: parseInt(f.price, 10) || 0,
+    mileage: parseInt(f.mileage, 10) || 0,
+    engineSize: parseInt(f.engineSize, 10) || 0,
+    horsepower: parseInt(f.horsepower, 10) || 0,
+    transmission: f.transmission,
+    fuelType: f.fuelType,
+    features: f.features.slice(),
+    sourceSite: f.sourceSite,
+    url: (f.url || '').trim(),
+    country: f.country,
+    accidentStatus: f.accidentStatus,
+    accidentFree: f.accidentStatus === 'accident-free',
+    shortlisted: false,
+    addedAt: new Date().toISOString()
+  };
+  if (S.editId) {
+    var prev = S.listings.find(function (l) { return l.id === S.editId; });
+    if (prev) { rec.shortlisted = prev.shortlisted; rec.addedAt = prev.addedAt || rec.addedAt; }
+    S.listings = S.listings.map(function (l) { return l.id === S.editId ? rec : l; });
+  } else {
+    S.listings = [rec].concat(S.listings);
+  }
+  persistListings();
+  S.isAddOpen = false;
+  S.editId = null;
+  S.pasteText = '';
+  S.pasteFeedback = '';
+  render();
+}
+
+/* =====================================================================
+   Tiny DOM helper
+   ===================================================================== */
+
+function el(tag, attrs, children) {
+  var parts = tag.split('.');
+  var node = document.createElement(parts[0]);
+  if (parts.length > 1) node.className = parts.slice(1).join(' ');
+  if (attrs) Object.keys(attrs).forEach(function (k) {
+    var v = attrs[k];
+    if (v == null || v === false) return;
+    if (k === 'cls') node.className = (node.className ? node.className + ' ' : '') + v;
+    else if (k === 'text') node.textContent = v;
+    else if (k === 'html') node.innerHTML = v;
+    else if (k.slice(0, 2) === 'on') node.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'value') node.value = v;
+    else if (k === 'checked' || k === 'disabled' || k === 'selected') node[k] = !!v;
+    else node.setAttribute(k, v);
+  });
+  (children || []).forEach(function (c) {
+    if (c == null || c === false) return;
+    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  });
+  return node;
+}
+function eur(n) { return '€' + Number(n || 0).toLocaleString('en-US'); }
+function km(n) { return Number(n || 0).toLocaleString('en-US') + ' km'; }
+function featuresText(keys) {
+  var out = (keys || []).map(function (k) {
+    var f = FEATURES.find(function (x) { return x.key === k; });
+    return f ? f.label : null;
+  }).filter(Boolean);
+  return out.length ? out.join(', ') : '—';
+}
+
+/* =====================================================================
+   Actions
+   ===================================================================== */
+
+function setFilter(k, v) { S.filters[k] = v; }
+function toggleIn(arr, v) {
+  var i = arr.indexOf(v);
+  if (i > -1) arr.splice(i, 1); else arr.push(v);
+  return arr;
+}
+function resetFilters() {
+  S.filters = blankFilters();
+  S.searchName = ''; S.activeSearchId = null; S.selectedIds = [];
+  S.shortlistOnly = false; S.showLinks = false;
+  render();
+}
+function newSearch() { resetFilters(); }
+
+function saveSearch() {
+  var name = (S.searchName || '').trim();
+  if (!name) { alert('Give the search a name first.'); return; }
+  var rec = {
+    id: 'q' + Date.now(), name: name,
+    filters: JSON.parse(JSON.stringify(S.filters)),
+    transportEstimate: S.transportEstimate, rarFees: S.rarFees
+  };
+  var i = S.savedSearches.findIndex(function (q) {
+    return q.name.toLowerCase() === name.toLowerCase(); });
+  if (i >= 0) { rec.id = S.savedSearches[i].id; S.savedSearches[i] = rec; }
+  else S.savedSearches = S.savedSearches.concat([rec]);
+  S.activeSearchId = rec.id;
+  persistSearches();
+  render();
+}
+function loadSearch(id) {
+  var q = S.savedSearches.find(function (x) { return x.id === id; });
+  if (!q) return;
+  S.filters = Object.assign(blankFilters(), JSON.parse(JSON.stringify(q.filters)));
+  if (q.transportEstimate != null) S.transportEstimate = q.transportEstimate;
+  if (q.rarFees != null) S.rarFees = q.rarFees;
+  S.activeSearchId = id; S.searchName = q.name; S.selectedIds = [];
+  if (isMobile()) S.railOpen = false;
+  render();
+}
+function deleteSearch(id) {
+  var q = S.savedSearches.find(function (x) { return x.id === id; });
+  if (q && !confirm('Delete the saved search "' + q.name + '"?')) return;
+  S.savedSearches = S.savedSearches.filter(function (x) { return x.id !== id; });
+  if (S.activeSearchId === id) S.activeSearchId = null;
+  persistSearches();
+  render();
+}
+
+function toggleShortlist(id) {
+  S.listings = S.listings.map(function (l) {
+    return l.id === id ? Object.assign({}, l, { shortlisted: !l.shortlisted }) : l; });
+  persistListings();
+  render();
+}
+function toggleSelect(id) {
+  var i = S.selectedIds.indexOf(id);
+  if (i > -1) S.selectedIds.splice(i, 1);
+  else if (S.selectedIds.length < 3) S.selectedIds.push(id);
+  render();
+}
+function deleteListing(id) {
+  var l = S.listings.find(function (x) { return x.id === id; });
+  if (l && !confirm('Remove "' + l.title + '" from your list?')) return;
+  S.listings = S.listings.filter(function (x) { return x.id !== id; });
+  S.selectedIds = S.selectedIds.filter(function (x) { return x !== id; });
+  persistListings();
+  render();
+}
+function sortBy(key) {
+  if (S.sortKey === key) S.sortDir = S.sortDir === 'asc' ? 'desc' : 'asc';
+  else { S.sortKey = key; S.sortDir = 'asc'; }
+  render();
+}
+function openAdd() {
+  S.isAddOpen = true; S.editId = null;
+  S.formData = blankForm(); S.pasteText = ''; S.pasteFeedback = '';
+  render();
+}
+function openEdit(id) {
+  var l = S.listings.find(function (x) { return x.id === id; });
+  if (!l) return;
+  S.isAddOpen = true; S.editId = id; S.pasteText = ''; S.pasteFeedback = '';
+  S.formData = Object.assign({}, l, {
+    year: String(l.year || ''), price: String(l.price || ''),
+    mileage: String(l.mileage || ''), engineSize: String(l.engineSize || ''),
+    horsepower: String(l.horsepower || ''),
+    features: (l.features || []).slice(),
+    accidentStatus: l.accidentStatus || (l.accidentFree === true ? 'accident-free' : 'unknown')
+  });
+  render();
+}
+function closeModal() {
+  S.isAddOpen = false; S.isCompareOpen = false; S.editId = null;
+  render();
+}
+
+/* =====================================================================
+   Views
+   ===================================================================== */
+
+function visibleListings() {
+  var out = S.listings.filter(function (l) { return matchesFilters(l); });
+  var dir = S.sortDir === 'asc' ? 1 : -1;
+  return out.sort(function (a, b) {
+    var av = a[S.sortKey] || 0, bv = b[S.sortKey] || 0;
+    return av > bv ? dir : av < bv ? -dir : 0;
+  });
+}
+
+function viewHeader() {
+  var active = S.savedSearches.find(function (q) { return q.id === S.activeSearchId; });
+  return el('header.hdr', null, [
+    el('button.icon-btn', {
+      onclick: function () { S.railOpen = !S.railOpen; render(); },
+      title: 'Saved searches', 'aria-label': 'Saved searches', text: '☰'
+    }),
+    el('div', { style: 'min-width:0' }, [
+      el('h1', { text: 'Find My Car' }),
+      el('div.sub', { text: (active ? active.name : 'Unsaved search') + ' · Romania & Germany' })
+    ])
+  ]);
+}
+
+function viewRail() {
+  var q = (S.railQuery || '').trim().toLowerCase();
+  var list = S.savedSearches.filter(function (x) {
+    return !q || x.name.toLowerCase().indexOf(q) > -1; });
+
+  var items = list.map(function (rec) {
+    var f = rec.filters || {};
+    var brands = f.brands || [];
+    var brandText = !brands.length ? 'Any brand'
+      : brands.length <= 2 ? brands.join(' · ')
+      : brands.slice(0, 2).join(' · ') + ' +' + (brands.length - 2);
+    var priceText = (f.priceMin && f.priceMax)
+      ? eur(f.priceMin) + '–' + Number(f.priceMax).toLocaleString('en-US')
+      : f.priceMax ? 'up to ' + eur(f.priceMax)
+      : f.priceMin ? 'from ' + eur(f.priceMin) : 'Any price';
+    var yearText = f.yearMin ? f.yearMin + '+' : 'Any year';
+    var count = S.listings.filter(function (l) { return matchesFilters(l, f); }).length;
+
+    return el('div.q' + (rec.id === S.activeSearchId ? '.on' : ''), null, [
+      el('div.bar'),
+      el('div', { style: 'flex:1;min-width:0' }, [
+        el('button.load', { onclick: function () { loadSearch(rec.id); } }, [
+          el('div.nm', { text: rec.name }),
+          el('div.meta', { text: brandText }),
+          el('div.meta.mono', { text: priceText + ' · ' + yearText }),
+          el('div.cnt', { text: count === 1 ? '1 match' : count + ' matches' })
+        ])
+      ]),
+      el('button.del', {
+        onclick: function () { deleteSearch(rec.id); },
+        title: 'Delete', 'aria-label': 'Delete search', text: '×'
+      })
+    ]);
+  });
+
+  return el('aside.rail' + (isMobile() ? '.drawer' : '.docked'), null, [
+    el('div', null, [
+      el('div', { style: 'display:flex;align-items:baseline;justify-content:space-between;gap:8px' }, [
+        el('div.sec-label', { style: 'margin:0', text: 'Saved searches' }),
+        el('div.tiny.mono', {
+          text: S.savedSearches.length === 1 ? '1 saved' : S.savedSearches.length + ' saved' })
+      ]),
+      el('div.tiny', { style: 'margin-top:4px', text: 'Your criteria, kept for later.' })
+    ]),
+
+    S.savedSearches.length >= 6 ? el('input', {
+      type: 'text', value: S.railQuery, placeholder: 'Filter saved searches…',
+      oninput: function (e) { S.railQuery = e.target.value; renderRailOnly(); }
+    }) : null,
+
+    el('button.btn', {
+      style: 'border-style:dashed;justify-content:flex-start',
+      onclick: newSearch, text: '+ New search'
+    }),
+
+    el('div', { style: 'flex:1;min-height:0;display:flex;flex-direction:column;gap:4px' },
+      items.length ? items : [
+        el('div.tiny', {
+          style: 'line-height:1.5;padding:6px 2px',
+          text: S.savedSearches.length
+            ? 'No saved search matches that name.'
+            : "Nothing saved yet. Set your filters, name them above, and they'll appear here."
+        })
+      ]
+    )
+  ]);
+}
+
+function chipRow(values, onRemove, emptyLabel) {
+  var kids = values.map(function (v) {
+    return el('span.chip', null, [
+      v.label,
+      el('button', {
+        onclick: function () { onRemove(v.value); },
+        'aria-label': 'Remove ' + v.label, text: '×'
+      })
+    ]);
+  });
+  if (!kids.length && emptyLabel) kids.push(el('span.tiny', { text: emptyLabel }));
+  return el('div.chips', null, kids);
+}
+
+function numField(label, key, placeholder) {
+  return el('div', null, [
+    el('label.field', { text: label }),
+    el('input', {
+      type: 'number', inputmode: 'numeric', value: S.filters[key], placeholder: placeholder || '',
+      oninput: function (e) {
+        setFilter(key, e.target.value === '' ? '' : Number(e.target.value));
+        renderResultsOnly();
+      }
+    })
+  ]);
+}
+
+function viewFilters() {
+  var f = S.filters;
+
+  var body = el('div', null, [
+    el('div.sec-label', { text: 'Brand' }),
+    el('select', {
+      style: 'max-width:300px;margin-bottom:12px',
+      'aria-label': 'Add a brand',
+      onchange: function (e) {
+        var v = e.target.value;
+        if (v && f.brands.indexOf(v) === -1) { f.brands.push(v); render(); }
+        else e.target.value = '';
+      }
+    }, [el('option', { value: '', text: 'Select a brand to add…' })].concat(
+      BRANDS.filter(function (b) { return f.brands.indexOf(b) === -1; })
+        .map(function (b) { return el('option', { value: b, text: b }); })
+    )),
+    chipRow(
+      f.brands.map(function (b) { return { label: b, value: b }; }),
+      function (b) { toggleIn(f.brands, b); render(); },
+      'Any brand'
+    ),
+
+    el('div.grid', { style: 'margin-bottom:16px' }, [
+      el('div', null, [
+        el('label.field', { text: 'Model (optional)' }),
+        el('input', {
+          type: 'text', value: f.model, placeholder: 'e.g. Kodiaq',
+          oninput: function (e) { setFilter('model', e.target.value); renderResultsOnly(); }
+        })
+      ]),
+      numField('Price min (€)', 'priceMin'),
+      numField('Price max (€)', 'priceMax'),
+      numField('Year from', 'yearMin'),
+      numField('Max engine (cm³)', 'engineMax'),
+      numField('Min horsepower', 'hpMin'),
+      el('div', null, [
+        el('label.field', { text: 'Transmission' }),
+        el('select', {
+          onchange: function (e) { setFilter('transmission', e.target.value); render(); }
+        }, ['Automatic', 'Manual', 'Either'].map(function (o) {
+          return el('option', { value: o, text: o, selected: f.transmission === o });
+        }))
+      ]),
+      el('div', null, [
+        el('label.field', { text: 'Market' }),
+        el('select', {
+          onchange: function (e) { setFilter('country', e.target.value); render(); }
+        }, [
+          el('option', { value: 'both', text: 'Romania & Germany', selected: f.country === 'both' }),
+          el('option', { value: 'Romania', text: 'Romania only', selected: f.country === 'Romania' }),
+          el('option', { value: 'Germany', text: 'Germany only', selected: f.country === 'Germany' })
+        ])
+      ])
+    ]),
+
+    el('div.sec-label', { text: 'Required features' }),
+    el('select', {
+      style: 'max-width:300px;margin-bottom:12px',
+      'aria-label': 'Add a required feature',
+      onchange: function (e) {
+        var v = e.target.value;
+        if (v && f.features.indexOf(v) === -1) { f.features.push(v); render(); }
+        else e.target.value = '';
+      }
+    }, [el('option', { value: '', text: 'Select a required feature…' })].concat(
+      FEATURES.filter(function (x) { return f.features.indexOf(x.key) === -1; })
+        .map(function (x) { return el('option', { value: x.key, text: x.label }); })
+    )),
+    chipRow(
+      f.features.map(function (k) {
+        var x = FEATURES.find(function (y) { return y.key === k; });
+        return { label: x ? x.label : k, value: k };
+      }),
+      function (k) { toggleIn(f.features, k); render(); },
+      'No feature requirements'
+    ),
+
+    el('button.toggle', {
+      'aria-pressed': String(!!f.accidentFree),
+      onclick: function () { f.accidentFree = !f.accidentFree; render(); }
+    }, [el('span.track', null, [el('i')]), 'Accident-free history only']),
+
+    el('div.sec-label', { style: 'margin-top:16px', text: 'Where to search' }),
+    el('select', {
+      style: 'max-width:300px;margin-bottom:12px',
+      'aria-label': 'Add a site',
+      onchange: function (e) {
+        var v = e.target.value;
+        if (v && f.sources.indexOf(v) === -1) { f.sources.push(v); render(); }
+        else e.target.value = '';
+      }
+    }, [el('option', { value: '', text: 'Select a site…' })].concat(
+      SITES.filter(function (s) { return f.sources.indexOf(s) === -1; })
+        .map(function (s) { return el('option', { value: s, text: s }); })
+    )),
+    chipRow(
+      f.sources.map(function (s) { return { label: s, value: s }; }),
+      function (s) { toggleIn(f.sources, s); render(); },
+      'All sites included'
+    ),
+
+    el('div', { style: 'border-top:1px solid var(--line-2);padding-top:14px' }, [
+      el('div.sec-label', { text: 'Landed cost assumptions (imports from Germany)' }),
+      el('div', { style: 'display:flex;gap:14px;flex-wrap:wrap' }, [
+        el('div', null, [
+          el('label.field', { text: 'Transport estimate (€)' }),
+          el('input', {
+            type: 'number', inputmode: 'numeric', value: S.transportEstimate,
+            style: 'width:150px',
+            oninput: function (e) {
+              S.transportEstimate = e.target.value; persistPrefs(); renderResultsOnly();
+            }
+          })
+        ]),
+        el('div', null, [
+          el('label.field', { text: 'Registration / RAR fees (€)' }),
+          el('input', {
+            type: 'number', inputmode: 'numeric', value: S.rarFees, style: 'width:150px',
+            oninput: function (e) { S.rarFees = e.target.value; persistPrefs(); renderResultsOnly(); }
+          })
+        ])
+      ])
+    ])
+  ]);
+
+  return el('section.card', null, [
+    el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [
+      el('div.card-h', { text: 'Filters' }),
+      el('div', { style: 'display:flex;gap:8px' }, [
+        el('button.btn.btn-sm', { onclick: resetFilters, text: 'Clear all' }),
+        el('button.btn.btn-sm', {
+          onclick: function () { S.showFilters = !S.showFilters; render(); },
+          text: S.showFilters ? 'Hide filters' : 'Show filters'
+        })
+      ])
+    ]),
+
+    el('div', {
+      style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;' +
+             'padding-bottom:14px;border-bottom:1px solid var(--line-2)'
+    }, [
+      el('input', {
+        type: 'text', value: S.searchName, placeholder: 'Name this search, e.g. Tiguan DSG DE',
+        style: 'flex:1;min-width:190px;width:auto',
+        oninput: function (e) { S.searchName = e.target.value; }
+      }),
+      el('button.btn', { onclick: saveSearch, text: S.activeSearchId ? 'Save / update' : 'Save search' }),
+      el('button.btn.btn-primary', {
+        onclick: function () { S.showLinks = true; render(); scrollToId('links'); },
+        text: 'Search'
+      })
+    ]),
+
+    S.showFilters ? body : null
+  ]);
+}
+
+function viewLinks() {
+  if (!S.showLinks) return null;
+  var urls = searchUrls();
+  if (!urls.length) {
+    return el('section.card', { id: 'links' }, [
+      el('div.card-h', { text: 'Open these searches' }),
+      el('div.note', { text: 'No sites match the market you selected. Widen "Market" or "Where to search".' })
+    ]);
+  }
+  return el('section.card', { id: 'links' }, [
+    el('div.card-h', { text: 'Open these searches' }),
+    el('div.tiny', {
+      style: 'margin:4px 0 12px',
+      text: 'Each link opens the portal with your price, year, power and gearbox already applied. ' +
+            'Found a good one? Copy the listing text and tap "Add listing" to pull it in here.'
+    }),
+    el('div.links', null, urls.map(function (u) {
+      return el('a.link', { href: u.url, target: '_blank', rel: 'noopener noreferrer' }, [
+        el('div', { style: 'min-width:0' }, [
+          el('div.nm', { text: u.site }),
+          el('div.sub', { text: u.note })
+        ]),
+        el('span.go', { text: '↗' })
+      ]);
+    }))
+  ]);
+}
+
+function viewRecommendations(filtered) {
+  if (filtered.length < 2) return null;
+  var landeds = filtered.map(landedCost);
+  var ctx = {
+    minLanded: Math.min.apply(null, landeds), maxLanded: Math.max.apply(null, landeds),
+    minMileage: Math.min.apply(null, filtered.map(function (l) { return l.mileage; })),
+    maxMileage: Math.max.apply(null, filtered.map(function (l) { return l.mileage; })),
+    minHp: Math.min.apply(null, filtered.map(function (l) { return l.horsepower; })),
+    maxHp: Math.max.apply(null, filtered.map(function (l) { return l.horsepower; })),
+    maxYear: Math.max.apply(null, filtered.map(function (l) { return l.year; }))
+  };
+  var ranked = filtered.map(function (l) {
+    var r = scoreListing(l, ctx);
+    return { l: l, score: Math.round(r.score), reasons: r.reasons };
+  }).sort(function (a, b) { return b.score - a.score; }).slice(0, 3);
+
+  var badges = ['Best match', 'Runner-up', 'Also worth a look'];
+
+  return el('section.card', null, [
+    el('div.card-h', { text: 'Recommendations' }),
+    el('div.tiny', {
+      style: 'margin:4px 0 12px',
+      text: 'Ranked on landed cost, mileage, power, equipment and year across your filtered results.'
+    }),
+    el('div.recs', null, ranked.map(function (r, i) {
+      return el('div.rec', null, [
+        el('div', { style: 'display:flex;justify-content:space-between;gap:8px;align-items:center' }, [
+          el('span.badge', { text: badges[i] }),
+          el('span.tiny.mono', { text: r.score + '/100' })
+        ]),
+        el('div', { style: 'font-size:14px;font-weight:600;line-height:1.3', text: r.l.title }),
+        el('div.mono', { style: 'font-size:13px' }, [
+          eur(r.l.price),
+          el('span.tiny', { text: '  landed ' + eur(landedCost(r.l)) })
+        ]),
+        el('div', {
+          style: 'font-size:12.5px;color:var(--text-2)',
+          text: r.reasons.length ? r.reasons.join(' · ') : 'meets all your filters'
+        }),
+        el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:2px' }, [
+          el('button.btn.btn-sm', {
+            onclick: function () { toggleShortlist(r.l.id); },
+            text: r.l.shortlisted ? '★ Shortlisted' : '☆ Shortlist'
+          }),
+          r.l.url ? el('a', {
+            href: r.l.url, target: '_blank', rel: 'noopener noreferrer',
+            style: 'font-size:12.5px;text-decoration:none', text: 'Open ↗'
+          }) : null
+        ])
+      ]);
+    }))
+  ]);
+}
+
+function viewChart(filtered) {
+  if (filtered.length < 2) return null;
+  var prices = filtered.map(function (l) { return l.price; });
+  var miles = filtered.map(function (l) { return l.mileage; });
+  var minP = Math.min.apply(null, prices), maxP = Math.max.apply(null, prices);
+  var minM = Math.min.apply(null, miles),  maxM = Math.max.apply(null, miles);
+  var w = 400, h = 180, pad = 24;
+
+  var svgNS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '180');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Price versus mileage across your filtered results');
+
+  [[pad, h - pad, w - pad, h - pad], [pad, pad, pad, h - pad]].forEach(function (c) {
+    var ln = document.createElementNS(svgNS, 'line');
+    ln.setAttribute('x1', c[0]); ln.setAttribute('y1', c[1]);
+    ln.setAttribute('x2', c[2]); ln.setAttribute('y2', c[3]);
+    ln.setAttribute('stroke', 'oklch(0.88 0.006 90)');
+    svg.appendChild(ln);
+  });
+
+  filtered.forEach(function (l) {
+    var c = document.createElementNS(svgNS, 'circle');
+    c.setAttribute('cx', maxM > minM ? pad + (l.mileage - minM) / (maxM - minM) * (w - 2 * pad) : w / 2);
+    c.setAttribute('cy', maxP > minP ? h - pad - (l.price - minP) / (maxP - minP) * (h - 2 * pad) : h / 2);
+    c.setAttribute('r', l.shortlisted ? 6 : 4);
+    c.setAttribute('fill', l.shortlisted ? 'oklch(0.68 0.15 85)' : 'oklch(0.55 0.15 145)');
+    var t = document.createElementNS(svgNS, 'title');
+    t.textContent = l.title + ' · ' + eur(l.price) + ' · ' + km(l.mileage);
+    c.appendChild(t);
+    svg.appendChild(c);
+  });
+
+  return el('section.card', null, [
+    el('div.card-h', { style: 'margin-bottom:10px', text: 'Price vs. mileage (filtered results)' }),
+    svg,
+    el('div', {
+      style: 'display:flex;justify-content:space-between;font-size:11px;color:var(--text-4);margin-top:2px'
+    }, [el('span', { text: 'lower mileage' }), el('span', { text: 'higher mileage →' })]),
+    el('div.tiny', { style: 'margin-top:4px', text: '↑ higher price · amber dots are shortlisted' })
+  ]);
+}
+
+function viewCard(l) {
+  var sel = S.selectedIds.indexOf(l.id) > -1;
+  var showLanded = l.country === 'Germany';
+  return el('article.item' + (sel ? '.on' : ''), null, [
+    el('div.top', null, [
+      el('div.ttl', { text: l.title }),
+      el('button.star' + (l.shortlisted ? '.on' : ''), {
+        onclick: function () { toggleShortlist(l.id); },
+        'aria-label': l.shortlisted ? 'Remove from shortlist' : 'Add to shortlist',
+        'aria-pressed': String(!!l.shortlisted),
+        text: l.shortlisted ? '★' : '☆'
+      })
+    ]),
+    el('div', {
+      style: 'font-size:13px;color:var(--text-3)',
+      text: [l.year, l.transmission, l.fuelType, l.country].join(' · ')
+    }),
+    el('div', { style: 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap' }, [
+      el('span.price', { text: eur(l.price) }),
+      showLanded ? el('span.tiny.mono', { text: 'landed ≈ ' + eur(landedCost(l)) }) : null
+    ]),
+    el('div.mono', {
+      style: 'font-size:13px;color:var(--text-3)',
+      text: km(l.mileage) + ' · ' + l.engineSize + ' cm³ · ' + l.horsepower + ' hp'
+    }),
+    el('div', {
+      cls: l.accidentFree === true ? 'ok' : 'warnc',
+      style: 'font-size:12.5px',
+      text: l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown')
+    }),
+    el('div', {
+      style: 'font-size:12.5px;color:var(--text-2)', text: featuresText(l.features)
+    }),
+    el('div.foot', null, [
+      el('label.pick', null, [
+        el('input', {
+          type: 'checkbox', checked: sel, disabled: !sel && S.selectedIds.length >= 3,
+          onchange: function () { toggleSelect(l.id); }
+        }),
+        'Compare'
+      ]),
+      el('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+        l.url ? el('a', {
+          href: l.url, target: '_blank', rel: 'noopener noreferrer',
+          style: 'font-size:12.5px;text-decoration:none', text: l.sourceSite + ' ↗'
+        }) : el('span.tiny', { text: l.sourceSite }),
+        el('button.btn.btn-sm', { onclick: function () { openEdit(l.id); }, text: 'Edit' }),
+        el('button.btn.btn-sm.btn-danger', {
+          onclick: function () { deleteListing(l.id); }, text: 'Delete'
+        })
+      ])
+    ])
+  ]);
+}
+
+function viewTable(list) {
+  function th(label, key) {
+    if (!key) return el('th', { text: label });
+    var arrow = S.sortKey === key ? (S.sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+    return el('th.sort', {
+      onclick: function () { sortBy(key); },
+      'aria-sort': S.sortKey === key ? (S.sortDir === 'asc' ? 'ascending' : 'descending') : 'none',
+      text: label + arrow
+    });
+  }
+
+  return el('div.tbl-wrap', null, [
+    el('table', null, [
+      el('thead', null, [
+        el('tr', null, [
+          el('th', { style: 'width:36px' }), el('th', { style: 'width:32px' }),
+          th('Listing'), th('Year', 'year'), th('Price', 'price'),
+          th('Mileage', 'mileage'), th('Engine'), th('HP', 'horsepower'),
+          th('Transmission'), th('History'), th('Features'),
+          th('Landed cost'), th('Source'), th('Actions')
+        ])
+      ]),
+      el('tbody', null, list.map(function (l) {
+        var sel = S.selectedIds.indexOf(l.id) > -1;
+        return el('tr' + (sel ? '.on' : ''), null, [
+          el('td', null, [el('input', {
+            type: 'checkbox', checked: sel, disabled: !sel && S.selectedIds.length >= 3,
+            'aria-label': 'Compare ' + l.title,
+            onchange: function () { toggleSelect(l.id); }
+          })]),
+          el('td', null, [el('button.star' + (l.shortlisted ? '.on' : ''), {
+            style: 'font-size:17px',
+            onclick: function () { toggleShortlist(l.id); },
+            'aria-label': 'Shortlist ' + l.title,
+            text: l.shortlisted ? '★' : '☆'
+          })]),
+          el('td', null, [
+            el('div', { style: 'font-weight:600', text: l.title }),
+            el('div.tiny', { text: l.fuelType + ' · ' + l.country })
+          ]),
+          el('td', { text: String(l.year) }),
+          el('td.mono', { style: 'font-weight:600', text: eur(l.price) }),
+          el('td.mono', { text: km(l.mileage) }),
+          el('td.mono', { text: l.engineSize + ' cm³' }),
+          el('td.mono', { text: String(l.horsepower) }),
+          el('td', { text: l.transmission }),
+          el('td', {
+            cls: l.accidentFree === true ? 'ok' : 'warnc',
+            style: 'font-size:12.5px',
+            text: l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown')
+          }),
+          el('td', {
+            style: 'max-width:220px;font-size:12.5px;color:var(--text-2)',
+            text: featuresText(l.features)
+          }),
+          el('td.mono', { text: l.country === 'Germany' ? eur(landedCost(l)) : '—' }),
+          el('td', null, [
+            l.url ? el('a', {
+              href: l.url, target: '_blank', rel: 'noopener noreferrer',
+              style: 'font-size:12.5px;text-decoration:none', text: l.sourceSite + ' ↗'
+            }) : el('span.tiny', { text: l.sourceSite })
+          ]),
+          el('td', { style: 'white-space:nowrap' }, [
+            el('button.btn.btn-sm', { onclick: function () { openEdit(l.id); }, text: 'Edit' }),
+            ' ',
+            el('button.btn.btn-sm.btn-danger', {
+              onclick: function () { deleteListing(l.id); }, text: 'Delete'
+            })
+          ])
+        ]);
+      }))
+    ])
+  ]);
+}
+
+function viewResults() {
+  var list = visibleListings();
+  var wrap = el('div', { id: 'results' });
+
+  wrap.appendChild(el('div.bar-row', null, [
+    el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' }, [
+      el('strong', {
+        text: list.length + (list.length === 1 ? ' match' : ' matches')
+      }),
+      el('span.tiny', {
+        text: 'of ' + S.listings.length + ' saved ' + (S.listings.length === 1 ? 'listing' : 'listings')
+      })
+    ]),
+    el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+      el('button.btn.btn-sm', {
+        onclick: function () { S.shortlistOnly = !S.shortlistOnly; render(); },
+        'aria-pressed': String(S.shortlistOnly),
+        style: S.shortlistOnly ? 'border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-deep)' : '',
+        text: S.shortlistOnly ? '★ Shortlist only' : '☆ Shortlist only'
+      }),
+      S.selectedIds.length ? el('button.btn.btn-sm.btn-dark', {
+        disabled: S.selectedIds.length < 2,
+        onclick: function () { S.isCompareOpen = true; render(); },
+        text: 'Compare (' + S.selectedIds.length + ')'
+      }) : null
+    ])
+  ]));
+
+  wrap.appendChild(viewRecommendations(list) || document.createComment(''));
+  wrap.appendChild(viewChart(list) || document.createComment(''));
+
+  if (!list.length) {
+    wrap.appendChild(el('div.empty', null, [
+      el('div', {
+        style: 'font-size:15px;margin-bottom:10px;color:var(--text-2)',
+        text: S.listings.length ? 'No listings match your current filters.' : 'No listings yet.'
+      }),
+      el('div', {
+        style: 'font-size:13px;line-height:1.6;max-width:520px;margin:0 auto 16px',
+        text: S.listings.length
+          ? 'Loosen a filter above, or add more listings.'
+          : 'Set your criteria above and press Search — that opens each portal with your filters applied. ' +
+            'When you find a car worth keeping, copy its text and add it here.'
+      }),
+      el('button.btn.btn-primary', { onclick: openAdd, text: '+ Add listing' })
+    ]));
+  } else if (isMobile()) {
+    list.forEach(function (l) { wrap.appendChild(viewCard(l)); });
+  } else {
+    wrap.appendChild(viewTable(list));
+  }
+  return wrap;
+}
+
+/* ---------- add / edit listing sheet ---------- */
+
+function viewAddSheet() {
+  var f = S.formData;
+  function txt(label, key, opts) {
+    opts = opts || {};
+    return el('div', null, [
+      el('label.field', { text: label }),
+      el('input', {
+        type: opts.num ? 'number' : 'text',
+        inputmode: opts.num ? 'numeric' : null,
+        value: f[key], placeholder: opts.ph || '',
+        oninput: function (e) { f[key] = e.target.value; }
+      })
+    ]);
+  }
+  function sel(label, key, options) {
+    return el('div', null, [
+      el('label.field', { text: label }),
+      el('select', { onchange: function (e) { f[key] = e.target.value; } },
+        options.map(function (o) {
+          return el('option', { value: o, text: o, selected: f[key] === o });
+        }))
+    ]);
+  }
+
+  return el('div.modal', {
+    onclick: function (e) { if (e.target === e.currentTarget) closeModal(); }
+  }, [
+    el('div.sheet', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Add listing' }, [
+      el('div.sheet-h', null, [
+        el('div.t', { text: S.editId ? 'Edit listing' : 'Add listing' }),
+        el('button.x', { onclick: closeModal, 'aria-label': 'Close', text: '×' })
+      ]),
+
+      !S.editId ? el('div', { style: 'margin-bottom:16px' }, [
+        el('div.sec-label', { text: 'Paste from the portal' }),
+        el('div.tiny', {
+          style: 'margin-bottom:8px',
+          text: 'Select the listing text on Autovit / AutoScout24 / mobile.de, copy it, and paste here. ' +
+                'Include the URL so the source is recorded.'
+        }),
+        el('textarea', {
+          rows: isMobile() ? 5 : 6, value: S.pasteText,
+          placeholder: 'Paste the listing text and its link here…',
+          oninput: function (e) { S.pasteText = e.target.value; }
+        }),
+        el('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+          el('button.btn.btn-primary', { onclick: parsePaste, text: 'Read the paste' }),
+          el('button.btn', {
+            onclick: function () {
+              if (!navigator.clipboard || !navigator.clipboard.readText) {
+                S.pasteFeedback = 'This browser will not let the page read the clipboard — paste into the box instead.';
+                render(); return;
+              }
+              navigator.clipboard.readText().then(function (t) {
+                S.pasteText = t; parsePaste();
+              })['catch'](function () {
+                S.pasteFeedback = 'Clipboard access was refused — paste into the box instead.';
+                render();
+              });
+            },
+            text: 'Paste from clipboard'
+          })
+        ]),
+        S.pasteFeedback ? el('div.note', { text: S.pasteFeedback }) : null
+      ]) : null,
+
+      el('div.sec-label', { text: 'Listing details' }),
+      el('div', { style: 'margin-bottom:12px' }, [txt('Title', 'title', { ph: 'VW Tiguan Life 2.0 TDI DSG' })]),
+      el('div.grid', { style: 'margin-bottom:12px' }, [
+        el('div', null, [
+          el('label.field', { text: 'Brand' }),
+          el('select', { onchange: function (e) { f.brand = e.target.value; } },
+            BRANDS.map(function (b) {
+              return el('option', { value: b, text: b, selected: f.brand === b });
+            }))
+        ]),
+        txt('Model', 'model', { ph: 'Tiguan' }),
+        txt('Trim', 'trim', { ph: 'Life' }),
+        txt('Year', 'year', { num: true }),
+        txt('Price (€)', 'price', { num: true }),
+        txt('Mileage (km)', 'mileage', { num: true }),
+        txt('Engine (cm³)', 'engineSize', { num: true }),
+        txt('Horsepower', 'horsepower', { num: true }),
+        sel('Transmission', 'transmission', ['Automatic', 'Manual']),
+        sel('Fuel', 'fuelType', ['Petrol', 'Diesel', 'Hybrid', 'Electric']),
+        sel('Source', 'sourceSite', SITES),
+        sel('Market', 'country', ['Romania', 'Germany']),
+        sel('Accident history', 'accidentStatus', ['accident-free', 'repaired damage', 'unknown'])
+      ]),
+      el('div', { style: 'margin-bottom:14px' }, [txt('Listing URL', 'url', { ph: 'https://…' })]),
+
+      el('div.sec-label', { text: 'Equipment' }),
+      el('div', {
+        style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-bottom:16px'
+      }, FEATURES.map(function (x) {
+        return el('label.pick', null, [
+          el('input', {
+            type: 'checkbox', checked: f.features.indexOf(x.key) > -1,
+            onchange: function () { toggleIn(f.features, x.key); }
+          }),
+          x.label
+        ]);
+      })),
+
+      el('div', { style: 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap' }, [
+        el('button.btn', { onclick: closeModal, text: 'Cancel' }),
+        el('button.btn.btn-primary', {
+          onclick: saveListing, text: S.editId ? 'Save changes' : 'Add to my list'
+        })
+      ])
+    ])
+  ]);
+}
+
+function viewCompareSheet() {
+  var picked = S.selectedIds
+    .map(function (id) { return S.listings.find(function (l) { return l.id === id; }); })
+    .filter(Boolean);
+  var cols = '130px repeat(' + Math.max(picked.length, 1) + ', minmax(120px,1fr))';
+
+  var rows = [
+    ['Brand', function (l) { return l.brand; }],
+    ['Model', function (l) { return l.model || '—'; }],
+    ['Trim', function (l) { return l.trim || '—'; }],
+    ['Year', function (l) { return String(l.year); }],
+    ['Price', function (l) { return eur(l.price); }],
+    ['Landed cost', function (l) { return eur(landedCost(l)); }],
+    ['Mileage', function (l) { return km(l.mileage); }],
+    ['Engine', function (l) { return l.engineSize + ' cm³'; }],
+    ['Horsepower', function (l) { return l.horsepower + ' hp'; }],
+    ['Transmission', function (l) { return l.transmission; }],
+    ['Fuel', function (l) { return l.fuelType; }],
+    ['Features', function (l) { return featuresText(l.features); }],
+    ['Accident history', function (l) {
+      return l.accidentFree === true ? 'Accident-free' : (l.accidentStatus || 'unknown'); }],
+    ['Source', function (l) { return l.sourceSite; }],
+    ['Market', function (l) { return l.country; }]
+  ];
+
+  return el('div.modal', {
+    onclick: function (e) { if (e.target === e.currentTarget) closeModal(); }
+  }, [
+    el('div.sheet', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Compare listings' }, [
+      el('div.sheet-h', null, [
+        el('div.t', { text: 'Compare listings' }),
+        el('button.x', { onclick: closeModal, 'aria-label': 'Close', text: '×' })
+      ]),
+      el('div', { style: 'overflow-x:auto' }, [
+        el('div', { style: 'min-width:' + (140 + picked.length * 130) + 'px' }, [
+          el('div', {
+            style: 'display:grid;grid-template-columns:' + cols +
+                   ';gap:10px;padding-bottom:12px;border-bottom:2px solid var(--line)'
+          }, [el('div')].concat(picked.map(function (l) {
+            return el('div', null, [
+              el('div', { style: 'font-weight:700;font-size:13.5px;margin-bottom:4px', text: l.title }),
+              el('div.mono', { style: 'font-weight:600;margin-bottom:6px', text: eur(l.price) }),
+              el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+                l.url ? el('a', {
+                  href: l.url, target: '_blank', rel: 'noopener noreferrer',
+                  style: 'font-size:12px;text-decoration:none', text: 'View ↗'
+                }) : null,
+                el('button', {
+                  style: 'background:none;border:none;font-size:12px;color:var(--danger);cursor:pointer;padding:0',
+                  onclick: function () { toggleSelect(l.id); }, text: 'Remove'
+                })
+              ])
+            ]);
+          }))),
+          el('div', null, rows.map(function (r) {
+            return el('div.cmp-row', { style: 'grid-template-columns:' + cols }, [
+              el('div.cmp-lbl', { text: r[0] })
+            ].concat(picked.map(function (l) {
+              return el('div', { style: 'font-size:13px', text: r[1](l) });
+            })));
+          }))
+        ])
+      ])
+    ])
+  ]);
+}
+
+/* =====================================================================
+   Render
+   ===================================================================== */
+
+function scrollToId(id) {
+  requestAnimationFrame(function () {
+    var n = document.getElementById(id);
+    if (n) n.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function renderResultsOnly() {
+  var old = document.getElementById('results');
+  if (!old) { render(); return; }
+  old.replaceWith(viewResults());
+}
+function renderRailOnly() {
+  var old = document.querySelector('.rail');
+  if (!old) { render(); return; }
+  var focused = document.activeElement;
+  var wasQuery = focused && focused.parentNode === old && focused.tagName === 'INPUT';
+  var pos = wasQuery ? focused.selectionStart : null;
+  old.replaceWith(viewRail());
+  if (wasQuery) {
+    var next = document.querySelector('.rail input[type=text]');
+    if (next) { next.focus(); if (pos != null) next.setSelectionRange(pos, pos); }
+  }
+}
+
+function render() {
+  var root = document.getElementById('app');
+  root.textContent = '';
+
+  root.appendChild(viewHeader());
+
+  var shell = el('div.shell');
+  if (S.railOpen && isMobile()) {
+    shell.appendChild(el('div.scrim', {
+      onclick: function () { S.railOpen = false; render(); }
+    }));
+  }
+  if (S.railOpen) shell.appendChild(viewRail());
+
+  var main = el('main.main');
+  main.appendChild(viewFilters());
+  var links = viewLinks();
+  if (links) main.appendChild(links);
+  main.appendChild(viewResults());
+  shell.appendChild(main);
+  root.appendChild(shell);
+
+  root.appendChild(el('button.fab', {
+    onclick: openAdd, 'aria-label': 'Add a listing'
+  }, ['+ Add listing']));
+
+  if (S.isAddOpen) root.appendChild(viewAddSheet());
+  else if (S.isCompareOpen) root.appendChild(viewCompareSheet());
+
+  document.body.style.overflow = (S.isAddOpen || S.isCompareOpen) ? 'hidden' : '';
+}
+
+/* =====================================================================
+   Boot
+   ===================================================================== */
+
+var resizeTimer;
+window.addEventListener('resize', function () {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function () {
+    var wasMobile = isMobile();
+    S.width = window.innerWidth;
+    if (wasMobile !== isMobile()) {
+      S.railOpen = !isMobile();
+      render();
+    }
+  }, 150);
+});
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && (S.isAddOpen || S.isCompareOpen)) closeModal();
+});
+
+load();
+render();
+
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js')['catch'](function () {});
+  });
+}
+
+})();
+</script>
+</body>
+</html>
