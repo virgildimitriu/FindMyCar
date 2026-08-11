@@ -348,6 +348,7 @@ var S = {
   isSearching: false,
   searchStatus: '',
   searchNotes: [],
+  lastSources: [],
   transportEstimate: 450,
   rarFees: 800,
   width: window.innerWidth
@@ -565,8 +566,13 @@ function summariseSources(sources) {
   return sources.map(function (s) {
     if (s.status === 'ok') return s.site + ': ' + s.count;
     if (s.status === 'partial') return s.site + ': ' + s.count + ' (partial)';
-    return s.site + ': failed';
+    return s.site + ': ' + (s.site === 'mobile.de' ? "can't be automated" : 'failed');
   }).join(' · ');
+}
+
+function mobileDeUrl() {
+  var u = searchUrls().find(function (x) { return x.site === 'mobile.de'; });
+  return u ? u.url : null;
 }
 
 function runAutoSearch() {
@@ -602,6 +608,7 @@ function runAutoSearch() {
       '. ' + merge.added + ' new, ' + merge.updated + ' updated.';
     S.searchStatus = summary;
     S.searchNotes = data.notes || [];
+    S.lastSources = data.sources || [];
     S.isSearching = false;
     render();
   }).catch(function (err) {
@@ -1187,8 +1194,28 @@ function viewFilters() {
     (S.searchNotes && S.searchNotes.length) ? el('div', { style: 'margin-top:6px' },
       S.searchNotes.map(function (n) { return el('div.tiny', { style: 'margin-top:2px', text: n }); })
     ) : null,
+    viewMobileDeCallout(),
 
     S.showFilters ? body : null
+  ]);
+}
+
+function viewMobileDeCallout() {
+  var entry = (S.lastSources || []).find(function (s) { return s.site === 'mobile.de'; });
+  if (!entry || entry.status === 'ok') return null;
+  var url = mobileDeUrl();
+  if (!url) return null;
+  return el('div', {
+    style: 'margin-top:8px;padding:10px 12px;border:1px solid var(--accent-line);' +
+           'background:var(--accent-soft);border-radius:8px;font-size:12.5px;display:flex;' +
+           'align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap'
+  }, [
+    el('span', { text: "mobile.de blocks automated search — browse it yourself, then paste a listing you like into a row's Edit action." }),
+    el('a', {
+      href: url, target: '_blank', rel: 'noopener noreferrer',
+      style: 'color:var(--accent-deep);font-weight:600;text-decoration:none;white-space:nowrap',
+      text: 'Open mobile.de ↗'
+    })
   ]);
 }
 
