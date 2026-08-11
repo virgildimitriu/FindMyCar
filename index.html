@@ -296,9 +296,12 @@ function blankFilters() {
     accidentFree:false, sources:[] };
 }
 function defaultFilters() {
+  // No required features by default: portal search-result pages carry no
+  // equipment data, so any required feature silently zeroes out automated
+  // results on first use — a confusing "0 matches" with no obvious cause.
   return { brands:['Volkswagen','Škoda','Kia'], model:'', priceMin:14000, priceMax:20000,
     yearMin:2023, engineMax:2000, hpMin:150, mileageMax:'', transmission:'Automatic',
-    features:['rearCamera'], country:'both', accidentFree:true, sources:[] };
+    features:[], country:'both', accidentFree:true, sources:[] };
 }
 function blankForm() {
   return { title:'', brand:'Volkswagen', model:'', trim:'', year:'', price:'', mileage:'',
@@ -623,9 +626,10 @@ function runAutoSearch() {
     var summary = fetched.length + ' results — ' + summariseSources(data.sources || []) +
       '. ' + merge.added + ' new, ' + merge.updated + ' updated.';
     if (fetched.length && passing < fetched.length) {
-      summary += ' Only ' + passing + ' of those show below — the rest are missing a required feature ' +
-        'your filters ask for (automated results don\'t include equipment data; see note below). ' +
-        'Unconfirmed accident history no longer hides a result, but check the History column before trusting one.';
+      var reason = S.filters.features.length
+        ? 'a required feature your filters ask for (automated results don\'t include equipment data; see note below)'
+        : 'your price / year / engine / power / mileage / transmission criteria';
+      summary += ' Only ' + passing + ' of those show below — the rest don\'t match ' + reason + '.';
     }
     S.searchStatus = summary;
     S.searchNotes = data.notes || [];
