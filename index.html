@@ -975,6 +975,15 @@ function historyText(l) {
   var risks = l.riskNotes || [];
   return risks.length ? base + ' · ⚠ ' + risks.join(', ') : base;
 }
+// A literal "0" reads as "confirmed zero equipment", but for automated
+// results it really means "unknown — portal search pages don't list it"
+// (same accidentStatus:'unknown' signal used everywhere else for this).
+// Only show a real number once there's actual data to count.
+function equipCountText(l) {
+  var count = (l.features || []).length;
+  if (count === 0 && l.accidentStatus === 'unknown') return '—';
+  return String(count);
+}
 
 /* =====================================================================
    Actions
@@ -1582,7 +1591,7 @@ function viewTable(list) {
           }),
           el('td.mono', {
             style: 'text-align:center',
-            text: String((l.features || []).length)
+            text: equipCountText(l)
           }),
           el('td', {
             style: 'max-width:220px;font-size:12.5px;color:var(--text-2)',
