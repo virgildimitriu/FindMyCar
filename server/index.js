@@ -3,6 +3,7 @@ var http = require('http');
 var url = require('url');
 var searchService = require('./search');
 var digest = require('./digest');
+var email = require('./email');
 
 var PORT = process.env.PORT || 8787;
 
@@ -52,6 +53,38 @@ var server = http.createServer(function (req, res) {
       sendJson(res, 200, result);
     }).catch(function (err) {
       sendJson(res, 400, { error: err.message || 'search failed' });
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/send-email') {
+    // On-demand "email these results" from the app itself — same shared
+    // secret as the digest trigger, since this also sends a real email to
+    // an address the CALLER chooses and the API has no other auth.
+    readBody(req).then(function (body) {
+      var secret = process.env.DIGEST_TRIGGER_SECRET;
+      if (!secret || body.secret !== secret) {
+        var authErr = new Error('missing or invalid secret'); authErr.status = 401; throw authErr;
+      }
+      var to = String(body.to || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        var toErr = new Error('invalid "to" address'); toErr.status = 400; throw toErr;
+      }
+      var listings = Array.isArray(body.listings) ? body.listings.slice(0, 200) : [];
+      var html = digest.renderListingsEmailHtml(listings, {
+        heading: body.heading || 'Find My Car — your search',
+        summaryLine: body.summaryLine || (listings.length + ' listings'),
+        limit: 50
+      });
+      return email.sendEmail({
+        to: to,
+        subject: body.subject || (listings.length + ' cars from Find My Car'),
+        html: html
+      });
+    }).then(function () {
+      sendJson(res, 200, { ok: true });
+    }).catch(function (err) {
+      sendJson(res, err.status || 400, { error: err.message || 'send failed' });
     });
     return;
   }

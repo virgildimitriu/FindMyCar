@@ -286,6 +286,7 @@ var API_BASE = (typeof window !== 'undefined' && window.FINDMYCAR_API_BASE) ||
 
 var LS_SEARCHES = 'findmycar_searches_v1';
 var LS_LISTINGS = 'findmycar_listings_v1';
+var LS_EMAIL = 'findmycar_email_prefs_v1';
 
 /* =====================================================================
    State
@@ -352,6 +353,11 @@ var S = {
   isSearching: false,
   searchStatus: '',
   searchNotes: [],
+  isEmailOpen: false,
+  emailTo: '',
+  emailSecret: '',
+  emailStatus: '',
+  isEmailSending: false,
   width: window.innerWidth
 };
 
@@ -385,8 +391,14 @@ function load() {
     S.listings = seedListings();
     persistListings();
   }
+  var emailPrefs = readJSON(LS_EMAIL);
+  if (emailPrefs) {
+    S.emailTo = emailPrefs.to || '';
+    S.emailSecret = emailPrefs.secret || '';
+  }
   S.railOpen = window.innerWidth >= 860;
 }
+function persistEmailPrefs() { writeJSON(LS_EMAIL, { to: S.emailTo, secret: S.emailSecret }); }
 
 /* =====================================================================
    Domain logic
@@ -647,6 +659,58 @@ function runAutoSearch() {
       : 'Search failed: ' + err.message + '. The API may be offline — try the links below instead.';
     S.searchStatus = msg;
     S.isSearching = false;
+    render();
+  });
+}
+
+/* ---- on-demand "email these results" ----
+   Gated behind the same shared secret the backend's daily digest trigger
+   uses, since the API otherwise has no auth at all and this sends a real
+   email to whatever address is typed in. */
+function toggleEmailPanel() {
+  S.isEmailOpen = !S.isEmailOpen;
+  S.emailStatus = '';
+  render();
+}
+function sendResultsEmail() {
+  var to = (S.emailTo || '').trim();
+  var secret = (S.emailSecret || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    S.emailStatus = 'Enter a valid email address.';
+    render();
+    return;
+  }
+  if (!secret) {
+    S.emailStatus = 'Enter the trigger secret (same one set as DIGEST_TRIGGER_SECRET on the backend).';
+    render();
+    return;
+  }
+  persistEmailPrefs();
+  var list = visibleListings();
+  S.isEmailSending = true;
+  S.emailStatus = 'Sending…';
+  render();
+
+  fetch(API_BASE + '/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: to,
+      secret: secret,
+      listings: list,
+      heading: 'Find My Car — ' + (S.searchName || 'your search'),
+      summaryLine: list.length + ' matches, sent from the app on ' + new Date().toISOString().slice(0, 10),
+      subject: list.length + ' cars from Find My Car'
+    })
+  }).then(function (res) {
+    return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+  }).then(function (r) {
+    S.isEmailSending = false;
+    S.emailStatus = r.ok ? ('Sent to ' + to + '.') : ('Failed: ' + (r.data.error || 'unknown error'));
+    render();
+  }).catch(function (err) {
+    S.isEmailSending = false;
+    S.emailStatus = 'Failed: ' + err.message;
     render();
   });
 }
@@ -1481,7 +1545,7 @@ function viewTable(list) {
           el('th', { style: 'width:36px' }), el('th', { style: 'width:32px' }),
           th('Listing'), th('Year', 'year'), th('Price', 'price'),
           th('Mileage', 'mileage'), th('Engine'), th('HP', 'horsepower'),
-          th('Transmission'), th('History'), th('Features'),
+          th('Transmission'), th('History'), th('Equip.'), th('Features'),
           th('Source'), th('Actions')
         ])
       ]),
@@ -1514,6 +1578,10 @@ function viewTable(list) {
             style: 'font-size:12.5px',
             text: historyText(l)
           }),
+          el('td.mono', {
+            style: 'text-align:center',
+            text: String((l.features || []).length)
+          }),
           el('td', {
             style: 'max-width:220px;font-size:12.5px;color:var(--text-2)',
             text: featuresText(l.features)
@@ -1534,6 +1602,44 @@ function viewTable(list) {
         ]);
       }))
     ])
+  ]);
+}
+
+function viewEmailPanel(list) {
+  if (!S.isEmailOpen) return null;
+  return el('div.card', { style: 'margin-bottom:14px' }, [
+    el('div.card-h', { text: 'Email these results' }),
+    el('div.tiny', {
+      style: 'margin:4px 0 10px',
+      text: 'Sends the ' + list.length + ' listing' + (list.length === 1 ? '' : 's') + ' currently shown below. ' +
+        'The secret is the same DIGEST_TRIGGER_SECRET set on the backend — needed so this can\'t be used to spam ' +
+        'strangers, since the app has no login.'
+    }),
+    el('div.grid', { style: 'margin-bottom:10px' }, [
+      el('div', null, [
+        el('label.field', { text: 'Send to' }),
+        el('input', {
+          type: 'text', value: S.emailTo, placeholder: 'someone@example.com',
+          oninput: function (e) { S.emailTo = e.target.value; }
+        })
+      ]),
+      el('div', null, [
+        el('label.field', { text: 'Trigger secret' }),
+        el('input', {
+          type: 'password', value: S.emailSecret, placeholder: 'DIGEST_TRIGGER_SECRET',
+          oninput: function (e) { S.emailSecret = e.target.value; }
+        })
+      ])
+    ]),
+    el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+      el('button.btn.btn-primary', {
+        onclick: sendResultsEmail,
+        disabled: S.isEmailSending || !list.length,
+        text: S.isEmailSending ? 'Sending…' : 'Send email'
+      }),
+      el('button.btn', { onclick: toggleEmailPanel, text: 'Cancel' })
+    ]),
+    S.emailStatus ? el('div.note', { style: 'margin-top:10px', text: S.emailStatus }) : null
   ]);
 }
 
@@ -1561,10 +1667,16 @@ function viewResults() {
         disabled: S.selectedIds.length < 2,
         onclick: function () { S.isCompareOpen = true; render(); },
         text: 'Compare (' + S.selectedIds.length + ')'
-      }) : null
+      }) : null,
+      el('button.btn.btn-sm', {
+        onclick: toggleEmailPanel,
+        'aria-pressed': String(S.isEmailOpen),
+        text: '✉ Email these results'
+      })
     ])
   ]));
 
+  wrap.appendChild(viewEmailPanel(list) || document.createComment(''));
   wrap.appendChild(viewRecommendations(list) || document.createComment(''));
   wrap.appendChild(viewChart(list) || document.createComment(''));
 

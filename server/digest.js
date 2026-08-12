@@ -52,11 +52,12 @@ function listingRowHtml(l) {
   '</tr>';
 }
 
-function buildDigestHtml(result, matched) {
-  var top = matched.slice(0, 30);
-  var sourcesLine = result.sources.map(function (s) {
-    return escapeHtml(s.site) + ': ' + (s.status === 'error' ? 'failed' : s.count);
-  }).join(' · ');
+// Shared by the daily cron digest and the on-demand "email these results"
+// endpoint the app's Search page can trigger — same look either way.
+function renderListingsEmailHtml(listings, opts) {
+  opts = opts || {};
+  var limit = opts.limit || 50;
+  var top = listings.slice(0, limit);
 
   var body = top.length
     ? ('<table style="width:100%;border-collapse:collapse;font-size:13px">' +
@@ -65,17 +66,16 @@ function buildDigestHtml(result, matched) {
           '<th style="padding:8px 10px">Year</th><th style="padding:8px 10px">Mileage</th>' +
           '<th style="padding:8px 10px">Power</th><th style="padding:8px 10px">Gearbox</th>' +
         '</tr></thead><tbody>' + top.map(listingRowHtml).join('') + '</tbody></table>')
-    : '<p style="color:#666">No matches today.</p>';
+    : '<p style="color:#666">No listings.</p>';
 
   return '<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;color:#222">' +
-    '<h2 style="margin:0 0 4px">Find My Car — daily digest</h2>' +
-    '<p style="color:#666;font-size:13px;margin:0 0 16px">' +
-      new Date().toISOString().slice(0, 10) + ' · ' + matched.length + ' matches · ' + sourcesLine +
-    '</p>' +
+    '<h2 style="margin:0 0 4px">' + escapeHtml(opts.heading || 'Find My Car') + '</h2>' +
+    '<p style="color:#666;font-size:13px;margin:0 0 16px">' + escapeHtml(opts.summaryLine || (listings.length + ' listings')) + '</p>' +
     body +
     '<p style="color:#999;font-size:11px;margin-top:16px;line-height:1.5">' +
       'Portal search pages don\'t expose accident history or equipment, so neither is verified here — ' +
-      'check each listing yourself before trusting it. Showing up to 30 of ' + matched.length + ' matches, sorted by price.' +
+      'check each listing yourself before trusting it.' +
+      (listings.length > limit ? (' Showing ' + limit + ' of ' + listings.length + ' listings, sorted as given.') : '') +
     '</p>' +
   '</div>';
 }
@@ -87,7 +87,14 @@ async function runDailyDigest() {
   var result = await searchService.runSearch(filters);
   var matched = result.listings.slice().sort(function (a, b) { return a.price - b.price; });
 
-  var html = buildDigestHtml(result, matched);
+  var sourcesLine = result.sources.map(function (s) {
+    return s.site + ': ' + (s.status === 'error' ? 'failed' : s.count);
+  }).join(' · ');
+  var html = renderListingsEmailHtml(matched, {
+    heading: 'Find My Car — daily digest',
+    summaryLine: new Date().toISOString().slice(0, 10) + ' · ' + matched.length + ' matches · ' + sourcesLine,
+    limit: 30
+  });
   await email.sendEmail({
     to: to,
     subject: 'Find My Car — ' + matched.length + ' match' + (matched.length === 1 ? '' : 'es') + ' today',
@@ -96,4 +103,8 @@ async function runDailyDigest() {
   return { matchCount: matched.length, sources: result.sources };
 }
 
-module.exports = { runDailyDigest: runDailyDigest, defaultDigestFilters: defaultDigestFilters };
+module.exports = {
+  runDailyDigest: runDailyDigest,
+  defaultDigestFilters: defaultDigestFilters,
+  renderListingsEmailHtml: renderListingsEmailHtml
+};
