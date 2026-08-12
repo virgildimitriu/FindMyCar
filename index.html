@@ -358,6 +358,7 @@ var S = {
   emailSecret: '',
   emailStatus: '',
   isEmailSending: false,
+  showEmailSecretField: false,
   width: window.innerWidth
 };
 
@@ -707,6 +708,7 @@ function sendResultsEmail() {
   }).then(function (r) {
     S.isEmailSending = false;
     S.emailStatus = r.ok ? ('Sent to ' + to + '.') : ('Failed: ' + (r.data.error || 'unknown error'));
+    if (r.ok) S.showEmailSecretField = false;
     render();
   }).catch(function (err) {
     S.isEmailSending = false;
@@ -1623,7 +1625,16 @@ function viewEmailPanel(list) {
           oninput: function (e) { S.emailTo = e.target.value; }
         })
       ]),
-      el('div', null, [
+      (S.emailSecret && !S.showEmailSecretField) ? el('div', null, [
+        el('label.field', { text: 'Trigger secret' }),
+        el('div', { style: 'display:flex;align-items:center;gap:8px;padding-top:8px' }, [
+          el('span.tiny', { text: 'Saved ✓' }),
+          el('button.btn.btn-sm', {
+            onclick: function () { S.showEmailSecretField = true; render(); },
+            text: 'Change'
+          })
+        ])
+      ]) : el('div', null, [
         el('label.field', { text: 'Trigger secret' }),
         el('input', {
           type: 'password', value: S.emailSecret, placeholder: 'DIGEST_TRIGGER_SECRET',
