@@ -9,4 +9,15 @@ services:
     envVars:
       - key: CONTACT_EMAIL
         value: virgildimitriu@yahoo.com
+      - key: DIGEST_TO_EMAIL
+        value: virgildimitriu@yahoo.com
+      # DIGEST_HOUR_UTC defaults to 5 (08:00 in Romania during EEST/summer,
+      # 07:00 during EET/winter) if not set — override here if you want a
+      # different time.
+      # Secrets below (sync: false) must be entered manually in the Render
+      # dashboard — never committed to render.yaml/git.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: DIGEST_TRIGGER_SECRET
+        sync: false
     healthCheckPath: /health
