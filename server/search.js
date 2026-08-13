@@ -93,7 +93,7 @@ function applyFilters(listings, filters) {
     if (filters.hpMin && l.horsepower && l.horsepower < Number(filters.hpMin)) return false;
     if (filters.mileageMax && l.mileage && l.mileage > Number(filters.mileageMax)) return false;
     if (filters.transmission && filters.transmission !== 'Either' && l.transmission !== filters.transmission) return false;
-    if (filters.fuelType && filters.fuelType !== 'Either' && l.fuelType !== filters.fuelType) return false;
+    if ((filters.fuelTypes || []).length && filters.fuelTypes.indexOf(l.fuelType) === -1) return false;
     if (filters.country && filters.country !== 'both' && l.country !== filters.country) return false;
     // accidentFree and required `features` are deliberately NOT enforced here:
     // portal search-result pages don't expose either, so every automated
@@ -102,6 +102,38 @@ function applyFilters(listings, filters) {
     // every automated result. The caller is told this via `notes`.
     return true;
   });
+}
+
+// After the list-page results are filtered down to what's actually going to
+// be shown, fetch each listing's own detail page for real equipment +
+// accident-history data — bounded per site (not per search) since each one
+// is a full extra HTTP request, and only for adapters that support it
+// (Autovit.ro, AutoScout24.ro/.de currently). Best-effort: a failed detail
+// fetch just leaves that listing as accidentStatus:'unknown' like before,
+// never blocks the response.
+var DETAIL_ENRICH_PER_SITE = 10;
+var DETAIL_TIMEOUT_MS = 7000;
+async function enrichWithDetails(listings) {
+  var perSiteCount = {};
+  var toEnrich = listings.filter(function (l) {
+    var adapter = ADAPTERS[l.sourceSite];
+    if (!adapter || typeof adapter.fetchDetail !== 'function') return false;
+    perSiteCount[l.sourceSite] = perSiteCount[l.sourceSite] || 0;
+    if (perSiteCount[l.sourceSite] >= DETAIL_ENRICH_PER_SITE) return false;
+    perSiteCount[l.sourceSite]++;
+    return true;
+  });
+  await Promise.allSettled(toEnrich.map(function (l) {
+    var adapter = ADAPTERS[l.sourceSite];
+    return adapter.fetchDetail(l.url, DETAIL_TIMEOUT_MS).then(function (detail) {
+      if (detail) {
+        l.features = detail.features;
+        l.accidentStatus = detail.accidentStatus;
+        l.accidentFree = detail.accidentStatus === 'accident-free';
+      }
+    });
+  }));
+  return toEnrich.length;
 }
 
 async function runSearch(filters) {
@@ -118,16 +150,24 @@ async function runSearch(filters) {
   var allListings = dedupe(perSite.reduce(function (acc, r) { return acc.concat(r.listings); }, []));
   var filtered = applyFilters(allListings, filters);
   var limit = filters.limit || 200;
+  var limited = filtered.slice(0, limit);
+  var enrichedCount = await enrichWithDetails(limited);
 
   var notes = [];
+  if (enrichedCount > 0) {
+    notes.push('Equipment and accident-history data was fetched from the listing\'s own detail page for ' +
+      enrichedCount + ' result(s) (Autovit.ro, AutoScout24.ro/.de, up to ' + DETAIL_ENRICH_PER_SITE +
+      ' per site) — those are real, seller-declared values. Other results still show "—" because their ' +
+      'source site\'s search page doesn\'t expose that data and wasn\'t enriched this time.');
+  }
   if (filters.accidentFree) {
-    notes.push('"Accident-free only" only excludes listings confirmed to have accident damage. Portal ' +
-      'search pages never expose accident history, so automated results still show up but are marked ' +
-      '"Not confirmed accident-free" in the History column — check the listing yourself before trusting it.');
+    notes.push('"Accident-free only" only excludes listings confirmed to have accident damage. Most portal ' +
+      'search pages never expose accident history, so unenriched automated results still show up but are ' +
+      'marked "Not confirmed accident-free" in the History column — check the listing yourself before trusting it.');
   }
   if (filters.features && filters.features.length) {
-    notes.push('Required features aren\'t shown on search-result pages either, so automated results have ' +
-      'no equipment data and are hidden by this filter too — check the listing itself.');
+    notes.push('Required features aren\'t shown on most search-result pages either, so unenriched automated ' +
+      'results have no equipment data and are hidden by this filter too — check the listing itself.');
   }
   if (siteNames.indexOf('OLX.ro') > -1 && siteNames.indexOf('Autovit.ro') > -1) {
     notes.push('Some OLX.ro car listings are cross-posted from Autovit.ro, so the same car can appear twice ' +
@@ -138,7 +178,7 @@ async function runSearch(filters) {
     queriedAt: queriedAt,
     sources: sources,
     notes: notes,
-    listings: filtered.slice(0, limit)
+    listings: limited
   };
 }
 

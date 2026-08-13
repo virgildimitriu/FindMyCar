@@ -82,7 +82,42 @@ async function search(host, siteName, filters, brand, timeoutMs) {
   return listings.map(function (l) { return normalise(l, siteName, host); }).filter(function (l) { return l.id; });
 }
 
+// AS24's detail page (props.pageProps.listingDetails.vehicle) has an
+// explicit hadAccident boolean — seller-declared, same reliability level as
+// a portal's "unfallfrei" text elsewhere, just structured this time — plus
+// a real equipment list grouped by category.
+async function fetchDetail(url, timeoutMs) {
+  var html = await util.fetchHtml(url, timeoutMs);
+  var nextData = util.extractJsonScript(html, '__NEXT_DATA__');
+  var vehicle = nextData && nextData.props && nextData.props.pageProps &&
+    nextData.props.pageProps.listingDetails && nextData.props.pageProps.listingDetails.vehicle;
+  if (!vehicle) return null;
+
+  var ids = [];
+  var eq = vehicle.equipment || {};
+  Object.keys(eq).forEach(function (cat) {
+    (eq[cat] || []).forEach(function (item) { if (item && item.id) ids.push(item.id); });
+  });
+  var features = util.detectFeatures(ids.join(', '));
+
+  var accidentStatus = 'unknown';
+  if (vehicle.hadAccident === true) accidentStatus = 'repaired damage';
+  else if (vehicle.hadAccident === false) accidentStatus = 'accident-free';
+
+  return { features: features, accidentStatus: accidentStatus };
+}
+
 module.exports = {
-  ro: { site: 'AutoScout24.ro', search: function (filters, brand, t) { return search('www.autoscout24.ro', 'AutoScout24.ro', filters, brand, t); }, buildUrl: function (f, b) { return buildUrl('www.autoscout24.ro', f, b); } },
-  de: { site: 'AutoScout24.de', search: function (filters, brand, t) { return search('www.autoscout24.de', 'AutoScout24.de', filters, brand, t); }, buildUrl: function (f, b) { return buildUrl('www.autoscout24.de', f, b); } }
+  ro: {
+    site: 'AutoScout24.ro',
+    search: function (filters, brand, t) { return search('www.autoscout24.ro', 'AutoScout24.ro', filters, brand, t); },
+    buildUrl: function (f, b) { return buildUrl('www.autoscout24.ro', f, b); },
+    fetchDetail: fetchDetail
+  },
+  de: {
+    site: 'AutoScout24.de',
+    search: function (filters, brand, t) { return search('www.autoscout24.de', 'AutoScout24.de', filters, brand, t); },
+    buildUrl: function (f, b) { return buildUrl('www.autoscout24.de', f, b); },
+    fetchDetail: fetchDetail
+  }
 };

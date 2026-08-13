@@ -97,4 +97,31 @@ async function search(filters, brand, timeoutMs) {
   return advertSearch.edges.map(function (e) { return normalise(e.node); }).filter(function (l) { return l.id; });
 }
 
-module.exports = { site: 'Autovit.ro', search: search, buildUrl: buildUrl };
+// Autovit's detail page (props.pageProps.advert) has an explicit equipment
+// list and, crucially, structured no_accident/damaged fields — a real
+// seller-declared confirmation instead of guessing from list-page text.
+// Still seller-declared, not independently verified, same reliability level
+// as a portal's "unfallfrei" text elsewhere — just structured this time.
+async function fetchDetail(url, timeoutMs) {
+  var html = await util.fetchHtml(url, timeoutMs);
+  var nextData = util.extractJsonScript(html, '__NEXT_DATA__');
+  var advert = nextData && nextData.props && nextData.props.pageProps && nextData.props.pageProps.advert;
+  if (!advert) return null;
+
+  var labels = [];
+  (advert.equipment || []).forEach(function (group) {
+    (group.values || []).forEach(function (v) { if (v.label) labels.push(v.label); });
+  });
+  var features = util.detectFeatures(labels.join(', '));
+
+  var pd = advert.parametersDict || {};
+  var noAccident = pd.no_accident && pd.no_accident.values && pd.no_accident.values[0];
+  var damaged = pd.damaged && pd.damaged.values && pd.damaged.values[0];
+  var accidentStatus = 'unknown';
+  if (damaged && damaged.value === '1') accidentStatus = 'repaired damage';
+  else if (noAccident && noAccident.value === '1') accidentStatus = 'accident-free';
+
+  return { features: features, accidentStatus: accidentStatus };
+}
+
+module.exports = { site: 'Autovit.ro', search: search, buildUrl: buildUrl, fetchDetail: fetchDetail };

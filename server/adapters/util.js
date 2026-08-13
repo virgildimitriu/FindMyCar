@@ -169,6 +169,44 @@ function detectAccidentStatus(text) {
   if (/accidentat|unfallschaden|repaired damage|daune reparate/.test(t)) return 'repaired damage';
   return 'unknown';
 }
+
+/* Used against a listing DETAIL page's own equipment list (Romanian labels
+   from Autovit, German equipment IDs from AutoScout24) — same patterns the
+   frontend paste-import parser uses on pasted listing text, so a feature
+   found this way means the same thing as one found by pasting. Mirrors
+   index.html's featMap; keep the two in sync if either changes. */
+var FEATURE_PATTERNS = {
+  rearCamera: /camer[aă] (?:video )?(?:spate|marsarier)|r[uü]ckfahrkamera|\brfk\b|rear.?view camera|reversing camera|area view/,
+  parkingSensors: /senzori (?:de )?parcare|parksensor|pdc|parking sensors|einparkhilfe sensoren/,
+  cruiseControl: /tempomat|cruise control|adaptive cruise|acc\b|pilot automat/,
+  heatedSeats: /scaune? (?:încălzite|incalzite)|sitzheizung|heated seats/,
+  navigation: /naviga(?:tie|ție)|navigation|navi\b/,
+  carplay: /carplay|android auto/,
+  frontCamera: /camer[aă] 360|360.?(?:grade|°)|surround view|area view 360/,
+  blindSpot: /unghi mort|blind spot|totwinkel/,
+  laneAssist: /lane assist|men(?:t|ț)inere (?:pe )?banda|spurhalte|lane control/,
+  ledMatrix: /matrix|led faruri|faruri led|led.?scheinwerfer|full led/,
+  panoramicRoof: /panoramic|panorama|trapa/,
+  towbar: /c[aâ]rlig|anh[aä]ngerkupplung|towbar/,
+  // Specific compound phrases only — bare "piele"/"leather" also matches a
+  // leather STEERING WHEEL or gearshifter (separate equipment entirely),
+  // which isn't the same as leather seats/upholstery (confirmed live: a car
+  // with fabric seats but a leather steering wheel got mistagged).
+  leatherSeats: /tapi[țt]erie (?:din )?piele|piele (?:naturala|natural[aă])?[, ]*tapi[țt]erie|leather (?:seats|upholstery)|leder(?:sitz|ausstattung|polster)/,
+  electricSeats: /scaune? electric|elektrische sitze|power seats/,
+  heatedWheel: /volan (?:încălzit|incalzit)|lenkradheizung|heated steering|steering wheel heated/,
+  keyless: /keyless|acces f[aă]r[aă] cheie|schl[uü]ssellos/,
+  dualClimate: /clima(?:tronic)? (?:bi|dual|2).?zon|dual.?zone|2.zonen/,
+  powerTailgate: /haion electric|elektrische heckklappe|power tailgate/,
+  awd: /4motion|4x4|quattro|awd|allrad|4wd/,
+  headUp: /head.?up/,
+  trafficSign: /recunoa(?:s|ș)tere (?:indicatoare|semne)|verkehrszeichen|traffic sign/,
+  parkAssist: /asisten(?:t|ț)[aă] (?:la )?parcare|park assist|einparkhilfe automatisch|autonomous parking/
+};
+function detectFeatures(text) {
+  var t = String(text || '').toLowerCase();
+  return Object.keys(FEATURE_PATTERNS).filter(function (k) { return FEATURE_PATTERNS[k].test(t); });
+}
 // Picks the brand that appears EARLIEST in the text, not the first one in
 // BRANDS array order — a plain .find() would tag a BMW listing as "Audi" the
 // moment "Audi" happens to appear anywhere later in a free-text description
@@ -209,5 +247,6 @@ module.exports = {
   extractHorsepower: extractHorsepower,
   extractEngineSize: extractEngineSize,
   detectAccidentStatus: detectAccidentStatus,
+  detectFeatures: detectFeatures,
   detectBrand: detectBrand
 };

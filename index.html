@@ -854,7 +854,9 @@ function parsePaste() {
     ledMatrix: /matrix|led faruri|faruri led|led.?scheinwerfer|full led/,
     panoramicRoof: /panoramic|panorama/,
     towbar: /c[aâ]rlig|anh[aä]ngerkupplung|towbar/,
-    leatherSeats: /piele|leder|leather/,
+    // Compound phrases only — bare "piele"/"leather" also matches a leather
+    // STEERING WHEEL (separate equipment, not seats/upholstery).
+    leatherSeats: /tapi[țt]erie (?:din )?piele|piele (?:naturala|natural[aă])?[, ]*tapi[țt]erie|leather (?:seats|upholstery)|leder(?:sitz|ausstattung|polster)/,
     electricSeats: /scaune electrice|elektrische sitze|power seats/,
     heatedWheel: /volan (?:încălzit|incalzit)|lenkradheizung|heated steering/,
     keyless: /keyless|acces f[aă]r[aă] cheie|schl[uü]ssellos/,
